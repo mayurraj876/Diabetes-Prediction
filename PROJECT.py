@@ -156,7 +156,6 @@ X = data.drop("Outcome",axis=1)
 print(type(X))
 y = data["Outcome"]
 X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
-help(LogisticRegression())
 
 
 # 
@@ -210,8 +209,8 @@ _, nn_acc = model.evaluate(X_test, y_test)
 
 # In[95]:
 
-
-print('Accuracy of Neural network: %.2f' % (nn_acc*100))
+"""
+#print('Accuracy of Neural network: %.2f' % (nn_acc*100))
 print('Accuracy of logistic regression : %.2f' % (log_reg*100))
 print('Accuracy of Knn: %.2f' % (knn*100))
 print('Accuracy of Random Forest Classifier : %.2f' % (clf*100))
@@ -220,7 +219,6 @@ print('Accuracy of SVM : %.2f' % (svm*100))
 
 # In[96]:
 
-
 model_compare = pd.DataFrame({"Logistic Regression":log_reg,
 "KNN":knn,
 "Random Forest Classifier":clf,
@@ -228,7 +226,7 @@ model_compare = pd.DataFrame({"Logistic Regression":log_reg,
 index=["accuracy"])
 model_compare.T.plot.bar(figsize=(15,10));
 
-
+"""
 # In[ ]:
 
 
