@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[134]:
+# In[199]:
 
 
 import numpy as np   
@@ -19,13 +19,13 @@ from keras.models import Sequential
 from keras.layers import Dense
 #Evaluation
 from sklearn.model_selection import train_test_split,cross_val_score
-from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.metrics import confusion_matrix, classification_report,plot_confusion_matrix
 from sklearn.metrics import precision_score, recall_score, f1_score
 
 
 # # Data processing 
 
-# In[135]:
+# In[200]:
 
 
 data = pd.read_csv("diabetes.csv")
@@ -35,7 +35,7 @@ for attribute in attributes:
     sns.violinplot(x="Outcome", y=attribute, data=data, palette="muted", split=True)
 
 
-# In[136]:
+# In[201]:
 
 
 #replacing missing value with nan value
@@ -51,13 +51,13 @@ for attribute in attributes:
     data.loc[(data[attribute] < fence_low) | (data[attribute] > fence_high),attribute]=np.nan
 
 
-# In[137]:
+# In[202]:
 
 
 print(data.info())
 
 
-# In[138]:
+# In[203]:
 
 
 # calculation of median for each attribute for both possible 
@@ -74,7 +74,7 @@ for attribute in attributes:
 print(data.info())
 
 
-# In[139]:
+# In[204]:
 
 
 
@@ -98,7 +98,7 @@ ax[3,1].set_title('Diabetes Pedigree Function')
 ax[3,1].hist(data.DiabetesPedigreeFunction[data.Outcome==1]);
 
 
-# In[140]:
+# In[205]:
 
 
 
@@ -107,7 +107,7 @@ for attribute in attributes:
     sns.violinplot(x="Outcome", y=attribute, data=data, palette="muted", split=True)
 
 
-# In[141]:
+# In[206]:
 
 
 # standardization of dataset
@@ -123,7 +123,7 @@ def z_score(df):
 data_std=z_score(data)
 
 
-# In[142]:
+# In[207]:
 
 
 # It shows the correlation(positive,neagative) between different columns(only integer value columns) 
@@ -134,7 +134,7 @@ ax = sns.heatmap(corr_matrix,annot=True,linewidth=0.5,fmt=".2f",cmap="RdYlBu")
 
 # ###### Distribution of data set 
 
-# In[143]:
+# In[208]:
 
 
 y = data["Outcome"]
@@ -145,7 +145,7 @@ X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
 # 
 # # Models 
 
-# In[144]:
+# In[209]:
 
 
 list_of_algo=[SVC(),AdaBoostClassifier(), 
@@ -154,19 +154,51 @@ list_of_algo=[SVC(),AdaBoostClassifier(),
 name_of_algo=["SVM","AdaBoostClassifier", 
               "RandomForestClassifier",
               "LogisticRegression","KNeighborsClassifier"]
-i=0
-for algorithm in list_of_algo:
+for i,algorithm in enumerate(list_of_algo):
     model=algorithm
     model.fit(X_train,y_train)
+    y_pred=model.predict(X_test)
     model_score=cross_val_score(model,X,y,cv=15)
     print("*"*120)
     print('Accuracy of {} : {} '.format(name_of_algo[i],(model_score.mean()*100)))
-    i+=1
-    
-    
+    print('Precision of {} : {} '.format(name_of_algo[i],(model_score.mean()*100)))
+    plot_confusion_matrix(model, X_test, y_test,values_format="d")
+    plt.title(name_of_algo[i])
+    plt.show()    
 
 
-# In[145]:
+# In[211]:
+
+
+from sklearn.model_selection import GridSearchCV
+print(RandomForestClassifier())
+n_estimators = [100, 200, 250, 300, 350]
+max_depth = [1, 3, 4, 5, 8, 10]
+min_samples_split = [10, 15, 20, 25, 30, 100]
+min_samples_leaf = [1, 2, 4, 5, 7] 
+max_features = ['auto', 'sqrt']
+bootstrap = [True, False]
+rfr=RandomForestClassifier()
+hyperF = dict(n_estimators = n_estimators, max_depth = max_depth,
+              max_features = max_features,  min_samples_split = min_samples_split, 
+              min_samples_leaf = min_samples_leaf,bootstrap = bootstrap)
+
+gridF = GridSearchCV(rfr, hyperF,scoring='accuracy', cv = 5, verbose = 1, 
+                      n_jobs = -1)
+bestF = gridF.fit(X_train, y_train)
+
+
+# In[224]:
+
+
+forestOpt = RandomForestClassifier(bootstrap=False, max_depth = 5,max_features="sqrt", n_estimators = 200, min_samples_split = 15, min_samples_leaf = 2)
+
+modelOpt = forestOpt.fit(X_train, y_train)
+y_pred = modelOpt.predict(X_test)
+print(modelOpt.score(X_test,y_test))
+
+
+# In[221]:
 
 
 
@@ -182,7 +214,7 @@ model.fit(X_train, y_train, epochs=200, batch_size=10)
 _, nn_acc = model.evaluate(X_test, y_test)
 
 
-# In[146]:
+# In[ ]:
 
 
 print('Accuracy of Neural network: %.2f' % (nn_acc*100))
