@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[9]:
+# In[22]:
 
 
 import numpy as np   
@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 #models
+from xgboost import XGBClassifier
+from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
@@ -21,18 +23,19 @@ from keras.layers import Dense
 from sklearn.model_selection import train_test_split,cross_val_score
 from sklearn.metrics import confusion_matrix, classification_report,plot_confusion_matrix
 from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.metrics import roc_curve,auc
 
 
 # # Data processing 
 
-# In[10]:
+# In[23]:
 
 
 data = pd.read_csv("diabetes.csv")
 attributes = data.drop("Outcome",axis=1).columns
 
 
-# In[33]:
+# In[24]:
 
 
 def violin_plot(nrow=4,ncol=2): 
@@ -119,13 +122,13 @@ def z_score(df):
     return df_std
 
 
-# In[34]:
+# In[25]:
 
 
 violin_plot()
 
 
-# In[35]:
+# In[26]:
 
 
 # replacing missing value with nan value
@@ -137,39 +140,42 @@ outliers_removal()
 median_target_all()
 
 
-# In[36]:
+# In[27]:
 
 
 print(data.info())
 
 
-# In[37]:
+# In[28]:
 
 
-fig, ax = plt.subplots(nrows=4, ncols=2, figsize=(12, 10))
+fig = plt.figure(figsize=(14,15))
 fig.tight_layout(pad=3.0)
-k=0
-for i in range(0,4):
-    for j in range(0,2):
-        ax[i,j].set_title(attributes[k])
-        ax[i,j].hist(data[attributes[k]][data.Outcome==1],color="green")
-        k+=1
+nrow,ncol,index=4,2,1    
+for attribute in attributes:
+    plt.subplot(nrow, ncol, index)
+    plt.title(attribute)
+    plt.hist(data[attribute][data.Outcome==0],alpha=0.5,label="Outcome=0")
+    plt.hist(data[attribute][data.Outcome==1],alpha=0.5,label="Outcome=1")
+    plt.legend(loc="best")
+    index+=1
+plt.show()
 
 
-# In[38]:
+# In[29]:
 
 
 violin_plot()
 
 
-# In[39]:
+# In[30]:
 
 
 # standardization of dataset
 data_std=z_score(data)
 
 
-# In[40]:
+# In[31]:
 
 
 # It shows the correlation(positive,neagative) between different columns(only integer value columns) 
@@ -180,7 +186,7 @@ ax = sns.heatmap(corr_matrix,annot=True,linewidth=0.5,fmt=".2f",cmap="RdYlBu")
 
 # ###### Distribution of data set 
 
-# In[41]:
+# In[32]:
 
 
 y = data["Outcome"]
@@ -191,7 +197,7 @@ X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
 # 
 # # Models 
 
-# In[18]:
+# In[116]:
 
 
 """from sklearn.decomposition import PCA
@@ -211,32 +217,35 @@ for i,algorithm in enumerate(list_of_algo):
     print('Accuracy of {} : {} '.format(name_of_algo[i],(model_score.mean()*100)))"""
 
 
-# In[25]:
+# In[ ]:
 
 
 
 
 
-# In[43]:
+# In[37]:
 
 
-from sklearn.metrics import roc_curve,auc
-list_of_algo=[SVC(),AdaBoostClassifier(), 
-              RandomForestClassifier(),
-              LogisticRegression(),KNeighborsClassifier()]
-name_of_algo=["SVM","AdaBoostClassifier", 
-              "RandomForestClassifier",
-              "LogisticRegression","KNeighborsClassifier"]
+
+list_of_algo=[SVC(probability=True),AdaBoostClassifier(), RandomForestClassifier(),
+              LogisticRegression(),KNeighborsClassifier(),XGBClassifier(),GaussianNB()]
+
+name_of_algo=["SVM","AdaBoostClassifier", "RandomForestClassifier",
+              "LogisticRegression","KNeighborsClassifier","XGBClassifier","GaussianNB"]
+for l in list_of_algo:
+    print(l)
+
 for i,algorithm in enumerate(list_of_algo):
     model=algorithm
     model.fit(X_train,y_train)
     y_pred=model.predict(X_test)
     model_score=cross_val_score(model,X,y,cv=15)
     
-    y_pred_prob = model.predict(X_test)
+    y_pred_prob = model.predict_proba(X_test)[:, 1]
     fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob)
     auc_model = auc(fpr, tpr)
     print("*"*120)
+    print('AUC of {} : {} '.format(name_of_algo[i],(auc_model)))
     print('Accuracy of {} : {} '.format(name_of_algo[i],(model_score.mean()*100)))
     print('Precision of {} : {} '.format(name_of_algo[i],(precision_score(y_test,y_pred)*100)))
     print('Recall of {} : {} '.format(name_of_algo[i],(recall_score(y_test,y_pred)*100)))
@@ -246,32 +255,36 @@ for i,algorithm in enumerate(list_of_algo):
     plt.show()    
 
 
-# In[27]:
+# In[118]:
 
 
-from sklearn.model_selection import GridSearchCV
+"""from sklearn.model_selection import GridSearchCV
 print(RandomForestClassifier())
 n_estimators = [100, 200, 250, 300, 350]
 max_depth = [1, 3, 4, 5, 8, 10]
 min_samples_split = [10, 15, 20, 25, 30, 100]
 min_samples_leaf = [1, 2, 4, 5, 7] 
 max_features = ['auto', 'sqrt']
-criterion='gini'
+criterion=['gini']
 bootstrap = [True, False]
 rfr=RandomForestClassifier()
-hyperF = dict(n_estimators = n_estimators, max_depth = max_depth,criterion=criterion
+hyperF = dict(n_estimators = n_estimators, max_depth = max_depth,criterion=criterion,
               max_features = max_features,  min_samples_split = min_samples_split, 
               min_samples_leaf = min_samples_leaf,bootstrap = bootstrap)
 
-gridF = GridSearchCV(rfr, hyperF,scoring='accuracy', cv = 5, verbose = 1, 
+gridF = GridSearchCV(rfr, hyperF,scoring='accuracy', cv = 3, verbose = 1, 
                       n_jobs = -1)
-bestF = gridF.fit(X_train, y_train)
+bestF = gridF.fit(X_train, y_train)"""
 
 
-# In[44]:
+# In[119]:
 
 
-forestOpt = RandomForestClassifier(n_estimators = 100,criterion='gini')
+print(bestF.best_params_)
+#forestOpt = RandomForestClassifier(n_estimators = 100,criterion='gini',bootstrap= False,max_depth= 3,max_features='auto'
+ #                                 ,min_samples_leaf= 4)
+forestOpt = RandomForestClassifier(n_estimators = 100,criterion='gini',bootstrap= False,max_depth= 3,max_features='auto'
+                                  ,min_samples_leaf= 4,random_state=6)
 
 modelOpt = forestOpt.fit(X_train, y_train)
 model_score=cross_val_score(forestOpt,X,y,cv=4)
@@ -280,7 +293,7 @@ print(modelOpt.score(X_test,y_test))
 print("score",model_score.mean())
 
 
-# In[49]:
+# In[120]:
 
 
 
@@ -300,7 +313,7 @@ auc_nn = auc(fpr, tpr)
 plot_auc(fpr,tpr,auc_nn)
 
 
-# In[47]:
+# In[121]:
 
 
 print(nn_acc)
