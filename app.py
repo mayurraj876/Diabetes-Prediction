@@ -8,7 +8,7 @@ model = pickle.load(open("Diabetes.pkl", "rb"))
 
 
 @app.route('/')
-def home():
+def hello_world():
     return render_template("index.html")
 
 
