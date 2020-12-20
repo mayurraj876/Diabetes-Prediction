@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[22]:
+# In[15]:
 
 
 import numpy as np   
@@ -24,18 +24,14 @@ from sklearn.model_selection import train_test_split,cross_val_score
 from sklearn.metrics import confusion_matrix, classification_report,plot_confusion_matrix
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.metrics import roc_curve,auc
+#for warning 
+from warnings import filterwarnings
+filterwarnings("ignore")
 
 
 # # Data processing 
 
-# In[23]:
-
-
-data = pd.read_csv("diabetes.csv")
-attributes = data.drop("Outcome",axis=1).columns
-
-
-# In[24]:
+# In[16]:
 
 
 def violin_plot(nrow=4,ncol=2): 
@@ -60,7 +56,14 @@ def violin_plot(nrow=4,ncol=2):
         
 def plot_auc(fpr,tpr,auc_model):
     """This function pots the ROC curve with help of False positive rate
-    and True positive rate and auc object"""
+    and True positive rate and auc object
+    
+    input : false positive rate, ture positive rate,auc of model
+    
+    output : ROC plot 
+    
+    return : None
+    """
     plt.figure(1)
     plt.plot([0, 1], [0, 1], 'k--')
     plt.plot(fpr, tpr, label='RF (area = {:.3f})'.format(auc_model))
@@ -122,31 +125,39 @@ def z_score(df):
     return df_std
 
 
-# In[25]:
+# In[17]:
+
+
+data = pd.read_csv("diabetes.csv")
+attributes = data.drop("Outcome",axis=1).columns
+
+
+# In[18]:
 
 
 violin_plot()
+sns.set(style="ticks", color_codes=True)
+sns.pairplot(data,hue='Outcome',palette='gnuplot');
 
 
-# In[26]:
+# In[19]:
 
 
 # replacing missing value with nan value
 data[["Glucose",  "BloodPressure","SkinThickness","Insulin","BMI"]]=data[["Glucose",  "BloodPressure","SkinThickness","Insulin","BMI"]].replace(0,np.nan)
-
 median_target_all()
 
 outliers_removal()
 median_target_all()
 
 
-# In[27]:
+# In[20]:
 
 
 print(data.info())
 
 
-# In[28]:
+# In[21]:
 
 
 fig = plt.figure(figsize=(14,15))
@@ -162,31 +173,39 @@ for attribute in attributes:
 plt.show()
 
 
-# In[29]:
+# In[22]:
+
+
+
+sns.set(style="ticks", color_codes=True)
+sns.pairplot(data,hue='Outcome',palette='gnuplot');
+
+
+# In[23]:
 
 
 violin_plot()
 
 
-# In[30]:
+# In[24]:
 
 
 # standardization of dataset
 data_std=z_score(data)
 
 
-# In[31]:
+# In[25]:
 
 
 # It shows the correlation(positive,neagative) between different columns(only integer value columns) 
 corr_matrix = data_std.corr()
 fig,ax = plt.subplots(figsize=(15,10))
-ax = sns.heatmap(corr_matrix,annot=True,linewidth=0.5,fmt=".2f",cmap="RdYlBu")
+ax = sns.heatmap(corr_matrix,annot=True,linewidth=0.5,fmt=".2f",cmap="YlOrBr")
 
 
 # ###### Distribution of data set 
 
-# In[32]:
+# In[26]:
 
 
 y = data["Outcome"]
@@ -197,7 +216,7 @@ X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
 # 
 # # Models 
 
-# In[116]:
+# In[27]:
 
 
 """from sklearn.decomposition import PCA
@@ -217,14 +236,7 @@ for i,algorithm in enumerate(list_of_algo):
     print('Accuracy of {} : {} '.format(name_of_algo[i],(model_score.mean()*100)))"""
 
 
-# In[ ]:
-
-
-
-
-
-# In[37]:
-
+# In[36]:
 
 
 list_of_algo=[SVC(probability=True),AdaBoostClassifier(), RandomForestClassifier(),
@@ -232,15 +244,12 @@ list_of_algo=[SVC(probability=True),AdaBoostClassifier(), RandomForestClassifier
 
 name_of_algo=["SVM","AdaBoostClassifier", "RandomForestClassifier",
               "LogisticRegression","KNeighborsClassifier","XGBClassifier","GaussianNB"]
-for l in list_of_algo:
-    print(l)
 
 for i,algorithm in enumerate(list_of_algo):
     model=algorithm
     model.fit(X_train,y_train)
     y_pred=model.predict(X_test)
-    model_score=cross_val_score(model,X,y,cv=15)
-    
+    model_score=cross_val_score(model,X,y,cv=10,scoring="roc_auc")
     y_pred_prob = model.predict_proba(X_test)[:, 1]
     fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob)
     auc_model = auc(fpr, tpr)
@@ -255,7 +264,7 @@ for i,algorithm in enumerate(list_of_algo):
     plt.show()    
 
 
-# In[118]:
+# In[38]:
 
 
 """from sklearn.model_selection import GridSearchCV
@@ -275,25 +284,48 @@ hyperF = dict(n_estimators = n_estimators, max_depth = max_depth,criterion=crite
 gridF = GridSearchCV(rfr, hyperF,scoring='accuracy', cv = 3, verbose = 1, 
                       n_jobs = -1)
 bestF = gridF.fit(X_train, y_train)"""
+"""from sklearn.model_selection import GridSearchCV
+model = XGBClassifier()
+param_grid = {
+    'n_estimators': [100,200,300,],
+    'colsample_bytree': [0.5,0.6,0.7],
+    'max_depth': [3,5,8],
+    'reg_alpha': [1.1, 1.2, 1.3],
+    'reg_lambda': [1.1, 1.2, 1.3],
+    'subsample': [0.8, 0.9,1,1.1],
+    'gamma':[1.4,1.5,1.6,]
+}
+gs = GridSearchCV(
+        estimator=model,
+        param_grid=param_grid, 
+        cv=10, 
+        n_jobs=-1, 
+        scoring="roc_auc",
+        verbose=2
+    )
+gsf=gs.fit(X_train,y_train)
+print(gsf.best_params_)"""
 
 
-# In[119]:
+# In[29]:
 
 
-print(bestF.best_params_)
-#forestOpt = RandomForestClassifier(n_estimators = 100,criterion='gini',bootstrap= False,max_depth= 3,max_features='auto'
- #                                 ,min_samples_leaf= 4)
+y = data["Outcome"]
+X=data_std.drop(["Outcome"],axis=1)
+X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
 forestOpt = RandomForestClassifier(n_estimators = 100,criterion='gini',bootstrap= False,max_depth= 3,max_features='auto'
                                   ,min_samples_leaf= 4,random_state=6)
-
+modelfit = XGBClassifier(colsample_bytree = 0.5,max_depth = 8,n_estimators=100,reg_alpha=1.1,reg_lambda=1.1, subsample=1,gamma=1.5)
+modelfit.fit(X_train,y_train)
 modelOpt = forestOpt.fit(X_train, y_train)
-model_score=cross_val_score(forestOpt,X,y,cv=4)
+model_score=cross_val_score(modelfit,X,y,cv=10,scoring="roc_auc")
 y_pred = modelOpt.predict(X_test)
-print(modelOpt.score(X_test,y_test))
+print(modelfit.score(X_test,y_test))
 print("score",model_score.mean())
+print(*model_score)
 
 
-# In[120]:
+# In[30]:
 
 
 
@@ -313,10 +345,15 @@ auc_nn = auc(fpr, tpr)
 plot_auc(fpr,tpr,auc_nn)
 
 
-# In[121]:
+# In[39]:
 
 
-print(nn_acc)
+import pickle
+# Save trained model to file
+pickle.dump(modelfit, open("Diabetes.pkl", "wb"))
+loaded_model = pickle.load(open("Diabetes.pkl", "rb"))
+loaded_model.predict(X_test)
+loaded_model.score(X_test,y_test)
 
 
 # In[ ]:

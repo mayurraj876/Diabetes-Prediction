@@ -8,7 +8,7 @@ model = pickle.load(open("Diabetes.pkl", "rb"))
 
 
 @app.route('/')
-def hello_world():
+def home():
     return render_template("index.html")
 
 
@@ -34,7 +34,7 @@ def predict():
     output = float(output)*100
 
     if output > 50:
-        return render_template('result.html', pred=f'You have chance of having diabetes.\nProbability of having Diabetes is {output}%')
+        return render_template('result.html', pred=f'You have a chance of having diabetes.\n Probability of having Diabetes is {output}%')
     else:
         return render_template('result.html', pred=f'You are safe.\n Probability of having diabetes is {output}%')
 
