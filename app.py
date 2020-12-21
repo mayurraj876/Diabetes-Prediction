@@ -1,5 +1,5 @@
-import pickle
 from flask import Flask, request, url_for, redirect, render_template
+import pickle
 import pandas as pd
 
 app = Flask(__name__)
@@ -14,6 +14,7 @@ def hello_world():
 
 @app.route('/predict', methods=['POST', 'GET'])
 def predict():
+    #int_features=[float(x) for x in request.form.values()]
     text1 = float(request.form['1'])
     text2 = float(request.form['2'])
     text3 = float(request.form['3'])
@@ -26,17 +27,13 @@ def predict():
     row_df = pd.DataFrame(
         [pd.Series([text1, text2, text3, text4, text5, text6, text7, text8])])
     print(row_df)
-
     prediction = model.predict_proba(row_df)
-
-    print(prediction)
     output = '{0:.{1}f}'.format(prediction[0][1], 2)
-    output = float(output)*100
 
-    if output > 50:
-        return render_template('result.html', pred=f'You have a chance of having diabetes.\n Probability of having Diabetes is {output}%')
+    if output > str(0.5):
+        return render_template('index.html', pred='You might have chance of having diabetes.\nProbability of having Diabetes is {}'.format(output))
     else:
-        return render_template('result.html', pred=f'You are safe.\n Probability of having diabetes is {output}%')
+        return render_template('index.html', pred='You are safe.\n Probability of having diabetes is {}'.format(output))
 
 
 if __name__ == '__main__':
