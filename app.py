@@ -33,9 +33,9 @@ def predict():
     # print(output)
 
     if output > str(0.5):
-        return render_template('result.html', pred='You might have chance of having diabetes./n Probability of having Diabetes is {}'.format(output))
+        return render_template('result.html', pred='You might have chance of having diabetes.\n Probability of having Diabetes is {}'.format(output))
     else:
-        return render_template('result.html', pred='You are safe./n Probability of having diabetes is {}'.format(output))
+        return render_template('result.html', pred='You are safe.\n Probability of having diabetes is {}'.format(output))
 
 
 if __name__ == '__main__':
