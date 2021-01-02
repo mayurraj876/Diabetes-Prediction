@@ -3,7 +3,7 @@
 
 # # Prediction of Diabetes based on given attribute using PIMA Diabetes dataset
 
-# In[73]:
+# In[104]:
 
 
 import numpy as np   
@@ -22,7 +22,7 @@ from sklearn.ensemble import AdaBoostClassifier
 from keras.models import Sequential
 from keras.layers import Dense
 #Evaluation
-from sklearn.model_selection import train_test_split,cross_val_score
+from sklearn.model_selection import train_test_split,cross_val_score,cross_validate
 from sklearn.metrics import confusion_matrix, classification_report,plot_confusion_matrix
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.metrics import roc_curve,auc
@@ -33,7 +33,7 @@ filterwarnings("ignore")
 
 # ## Function definations 
 
-# In[28]:
+# In[105]:
 
 
 def violin_plot(nrow=4,ncol=2): 
@@ -55,6 +55,8 @@ def violin_plot(nrow=4,ncol=2):
         sns.violinplot(x="Outcome", y=attribute, data=data)
         index+=1
     plt.show()
+    
+##############################################################################################################
         
 def plot_auc(fpr,tpr,auc_model):
     """
@@ -76,6 +78,7 @@ def plot_auc(fpr,tpr,auc_model):
     plt.legend(loc='best')
     plt.show()
  
+#############################################################################################################
 
 # calculation of median for each attribute for both possible outcome  
 def median_target(attribute):
@@ -96,11 +99,15 @@ def median_target(attribute):
     mean_op_1=temp[attribute][1]
     data.loc[(data['Outcome'] == 0 ) & (data[attribute].isnull()), attribute] = mean_op_0 #assigning mean to null values 
     data.loc[(data['Outcome'] == 1 ) & (data[attribute].isnull()), attribute] = mean_op_1
+    
+##############################################################################################################
 
 def median_target_all():
     # calling meadian_target for each attribute
     for attribute in attributes:
             median_target(attribute) 
+
+##############################################################################################################
         
 def outliers_removal():
     """
@@ -116,10 +123,13 @@ def outliers_removal():
         fence_high = q3 + 1.5 * iqr
         data.loc[(data[attribute] < fence_low) | (data[attribute] > fence_high),attribute]=np.nan
 
+##############################################################################################################
         
 def z_score(df):
     """Function for apply z score standardization
+    
        Input: dataframe to be standardized
+       
        output :standardized dataframe 
     """
     df_std = df.copy()
@@ -128,7 +138,7 @@ def z_score(df):
     return df_std
 
 
-# In[29]:
+# In[106]:
 
 
 # loading of PIMA dataset 
@@ -150,38 +160,38 @@ attributes = data.drop("Outcome",axis=1).columns
 
 # ## EDA
 
-# In[30]:
+# In[107]:
 
 
 data.head()
 
 
-# In[52]:
+# In[108]:
 
 
 data.info();
 
 
-# In[32]:
+# In[109]:
 
 
 data.describe()
 
 
-# In[33]:
+# In[110]:
 
 
 ax=data["Outcome"].value_counts().plot(kind="bar",color=["blue","red"])
 ax.set_xticklabels(['Diabetes','No Diabetes'],rotation=0);
 
 
-# In[34]:
+# In[111]:
 
 
 violin_plot()
 
 
-# In[35]:
+# In[112]:
 
 
 # Pairwise plot of all attributes 
@@ -191,7 +201,7 @@ sns.pairplot(data,hue='Outcome',palette='gnuplot');
 
 # ## Data processing 
 
-# In[36]:
+# In[113]:
 
 
 # replacing missing value with nan value
@@ -201,7 +211,7 @@ data[nan_replacement_att]=data[nan_replacement_att].replace(0,np.nan)
 median_target_all()  # median_target_all replaces nan value with median of that attribute grouped by outcome 
 
 
-# In[37]:
+# In[114]:
 
 
 outliers_removal() # replacing outliers with Nan 
@@ -209,13 +219,13 @@ outliers_removal() # replacing outliers with Nan
 median_target_all()
 
 
-# In[38]:
+# In[115]:
 
 
 print(data.isna().sum())
 
 
-# In[39]:
+# In[116]:
 
 
 fig = plt.figure(figsize=(14,15))
@@ -231,7 +241,7 @@ for attribute in attributes:
 plt.show()
 
 
-# In[40]:
+# In[117]:
 
 
 
@@ -239,20 +249,22 @@ sns.set(style="ticks", color_codes=True)
 sns.pairplot(data,hue='Outcome',palette='gnuplot');
 
 
-# In[41]:
+# In[118]:
 
 
 violin_plot()
 
 
-# In[42]:
+# In[119]:
 
 
 # standardization of dataset
 data_std=z_score(data)
+processed_data_mean=data_std.mean()
+processed_data_std=data_std.std()
 
 
-# In[43]:
+# In[120]:
 
 
 # It shows the correlation(positive,neagative) between different columns(only integer value columns) 
@@ -263,7 +275,7 @@ ax = sns.heatmap(corr_matrix,annot=True,linewidth=0.5,fmt=".2f",cmap="YlOrBr")
 
 # ###### Distribution of data set 
 
-# In[44]:
+# In[121]:
 
 
 y = data["Outcome"]
@@ -274,29 +286,31 @@ X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
 # ## Models 
 
 # ### Code using PCA for reducing dimensionality 
-#     from sklearn.decomposition import PCA
-#     from sklearn.pipeline import Pipeline
-#     for i in range(1,9):
+# ``` python 
+# from sklearn.decomposition import PCA
+# from sklearn.pipeline import Pipeline
+# for i in range(1,9):
 # 
-#         list_of_algo=[LogisticRegression(),GaussianNB(),SVC(probability=True),KNeighborsClassifier(),
-#                       RandomForestClassifier(),AdaBoostClassifier(),XGBClassifier()]
+#     list_of_algo=[LogisticRegression(),GaussianNB(),SVC(probability=True),KNeighborsClassifier(),
+#                   RandomForestClassifier(),AdaBoostClassifier(),XGBClassifier()]
 # 
-#         name_of_algo=["LogisticRegression","GaussianNB","SVM","KNeighborsClassifier",
-#                       "RandomForestClassifier","AdaBoostClassifier","XGBClassifier"]
-#         for i,algorithm in enumerate(list_of_algo):
-#             steps = [('pca', PCA(n_components=i)), ('m', algorithm)]
-#             model = Pipeline(steps=steps)
+#     name_of_algo=["LogisticRegression","GaussianNB","SVM","KNeighborsClassifier",
+#                   "RandomForestClassifier","AdaBoostClassifier","XGBClassifier"]
+#     for i,algorithm in enumerate(list_of_algo):
+#         steps = [('pca', PCA(n_components=i)), ('m', algorithm)]
+#         model = Pipeline(steps=steps)
 # 
-#             #### Evaluate model
-#             model_score = cross_val_score(model, X, y, scoring='roc_auc',cv=10)
-#             print("*"*120)
-#             print('Accuracy of {} : {} '.format(name_of_algo[i],(model_score.mean()*100)))
-#         print(" ")
-#         print("#"*120)
-#         print("")
+#         #### Evaluate model
+#         model_score = cross_val_score(model, X, y, scoring='roc_auc',cv=10)
+#         print("*"*120)
+#         print('Accuracy of {} : {} '.format(name_of_algo[i],(model_score.mean()*100)))
+#     print(" ")
+#     print("#"*120)
+#     print("")
+# ```
 # 
 
-# In[74]:
+# In[122]:
 
 
 list_of_algo=[LogisticRegression(),GaussianNB(),SVC(probability=True),KNeighborsClassifier(),
@@ -305,17 +319,26 @@ list_of_algo=[LogisticRegression(),GaussianNB(),SVC(probability=True),KNeighbors
 name_of_algo=["LogisticRegression","GaussianNB","SVM","KNeighborsClassifier",
               "RandomForestClassifier","AdaBoostClassifier","XGBClassifier"]
 
+score = {"accuracy": "accuracy",
+         "prec": "precision","recall" : "recall",
+         "f1" : "f1","roc_auc" : "roc_auc"}
+final_table=pd.DataFrame()
 for i,algorithm in enumerate(list_of_algo):
     model=algorithm
     model.fit(X_train,y_train)
     y_pred=model.predict(X_test)
-    model_score=cross_val_score(model,X,y,cv=10,scoring="roc_auc")
+    model_score=cross_validate(model,X,y,cv=10,scoring=score)
+    
     y_pred_prob = model.predict_proba(X_test)[:, 1]
     fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob)
     auc_model = auc(fpr, tpr)
+    
     print("*"*120)
+    score_table=pd.DataFrame(model_score).drop("score_time",axis=1).mean()
+    print(score_table)
+    final_table.append(score_table,ignore_index=True)
     print('AUC of {} : {:.3f} '.format(name_of_algo[i],(auc_model)))
-    print('AVG AUC of {} : {:.3f} + {:.3f} '.format(name_of_algo[i],(model_score.mean()*100),model_score.std()))
+    print('AVG AUC of {} : {:.3f} + {:.3f} '.format(name_of_algo[i],(model_score["test_roc_auc"].mean()*100),model_score["test_roc_auc"].std()))
     print('Precision of {} : {:.3f} '.format(name_of_algo[i],(precision_score(y_test,y_pred)*100)))
     print('Recall of {} : {:.3f} '.format(name_of_algo[i],(recall_score(y_test,y_pred)*100)))
     plot_auc(fpr,tpr,auc_model)
@@ -324,71 +347,13 @@ for i,algorithm in enumerate(list_of_algo):
     plt.show()    
 
 
-# ### Grid search for Random forest classifier
-#     """
-#     from sklearn.model_selection import GridSearchCV
-#     print(RandomForestClassifier())
-#     n_estimators = [100, 200, 250, 300, 350]
-#     max_depth = [1, 3, 4, 5, 8, 10]
-#     min_samples_split = [10, 15, 20, 25, 30, 100]
-#     min_samples_leaf = [1, 2, 4, 5, 7] 
-#     max_features = ['auto', 'sqrt']
-#     criterion=['gini']
-#     bootstrap = [True, False]
-#     rfr=RandomForestClassifier()
-#     hyperF = dict(n_estimators = n_estimators, max_depth = max_depth,criterion=criterion,
-#                   max_features = max_features,  min_samples_split = min_samples_split, 
-#                   min_samples_leaf = min_samples_leaf,bootstrap = bootstrap)
-# 
-#     gridF = GridSearchCV(rfr, hyperF,scoring='accuracy', cv = 3, verbose = 1, 
-#                           n_jobs = -1)
-#     bestF = gridF.fit(X_train, y_train)
-#     """
-# 
-# ### Grid search for XGB Classifer 
-#     """
-#     from sklearn.model_selection import GridSearchCV
-#     model = XGBClassifier()
-#     param_grid = {
-#         'n_estimators': [100,200,300,],
-#         'colsample_bytree': [0.5,0.6,0.7],
-#         'max_depth': [3,5,8],
-#         'reg_alpha': [1.1, 1.2, 1.3],
-#         'reg_lambda': [1.1, 1.2, 1.3],
-#         'subsample': [0.8, 0.9,1,1.1],
-#         'gamma':[1.4,1.5,1.6,]
-#     }
-#     gs = GridSearchCV(
-#             estimator=model,
-#             param_grid=param_grid, 
-#             cv=10, 
-#             n_jobs=-1, 
-#             scoring="roc_auc",
-#             verbose=2
-#         )
-#     gsf=gs.fit(X_train,y_train)
-#     print(gsf.best_params_)
-#     """
-
-# ## Finalizing optimal model for web application 
-
-# In[72]:
+# In[123]:
 
 
-y = data["Outcome"]
-X=data.drop(["Outcome"],axis=1)
-X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
-model_opt = XGBClassifier(colsample_bytree = 0.5,max_depth = 8,n_estimators=100,
-                          reg_alpha=1.1,reg_lambda=1.1, subsample=1,gamma=1.5)
-
-model_opt.fit(X_train,y_train)
-model_score=cross_val_score(model_opt,X,y,cv=10,scoring="roc_auc")
-
-print(model_opt.score(X_test,y_test))
-print("score {:.4f} + {:.4f}".format(model_score.mean(),model_score.std()))
+print(final_table)
 
 
-# In[47]:
+# In[124]:
 
 
 
@@ -410,9 +375,73 @@ auc_nn = auc(fpr, tpr)
 plot_auc(fpr,tpr,auc_nn)
 
 
+# ### Grid search for Random forest classifier
+# ```python    
+# from sklearn.model_selection import GridSearchCV
+# print(RandomForestClassifier())
+# n_estimators = [100, 200, 250, 300, 350]
+# max_depth = [1, 3, 4, 5, 8, 10]
+# min_samples_split = [10, 15, 20, 25, 30, 100]
+# min_samples_leaf = [1, 2, 4, 5, 7] 
+# max_features = ['auto', 'sqrt']
+# criterion=['gini']
+# bootstrap = [True, False]
+# rfr=RandomForestClassifier()
+# hyperF = dict(n_estimators = n_estimators, max_depth = max_depth,criterion=criterion,
+#               max_features = max_features,  min_samples_split = min_samples_split, 
+#               min_samples_leaf = min_samples_leaf,bootstrap = bootstrap)
+# 
+# gridF = GridSearchCV(rfr, hyperF,scoring='accuracy', cv = 3, verbose = 1, 
+#                       n_jobs = -1)
+# bestF = gridF.fit(X_train, y_train)
+# ```
+# 
+# ### Grid search for XGB Classifer 
+# ```python
+# from sklearn.model_selection import GridSearchCV
+# model = XGBClassifier()
+# param_grid = {
+#     'n_estimators': [100,200,300,],
+#     'colsample_bytree': [0.5,0.6,0.7],
+#     'max_depth': [3,5,8],
+#     'reg_alpha': [1.1, 1.2, 1.3],
+#     'reg_lambda': [1.1, 1.2, 1.3],
+#     'subsample': [0.8, 0.9,1,1.1],
+#     'gamma':[1.4,1.5,1.6,]
+# }
+# gs = GridSearchCV(
+#         estimator=model,
+#         param_grid=param_grid, 
+#         cv=10, 
+#         n_jobs=-1, 
+#         scoring="roc_auc",
+#         verbose=2
+#     )
+# gsf=gs.fit(X_train,y_train)
+# print(gsf.best_params_)
+# ```
+
+# ## Finalizing optimal model for web application 
+
+# In[125]:
+
+
+y = data["Outcome"]
+X=data.drop(["Outcome"],axis=1)
+X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
+model_opt = XGBClassifier(colsample_bytree = 0.5,max_depth = 8,n_estimators=100,
+                          reg_alpha=1.1,reg_lambda=1.1, subsample=1,gamma=1.5)
+
+model_opt.fit(X_train,y_train)
+model_score=cross_val_score(model_opt,X,y,cv=10,scoring="roc_auc")
+
+print(model_opt.score(X_test,y_test))
+print("score {:.4f} + {:.4f}".format(model_score.mean(),model_score.std()))
+
+
 # ## Storing trained model in a file 
 
-# In[50]:
+# In[126]:
 
 
 import pickle
