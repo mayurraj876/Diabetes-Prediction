@@ -3,7 +3,7 @@
 
 # # Prediction of Diabetes based on given attribute using PIMA Diabetes dataset
 
-# In[104]:
+# In[ ]:
 
 
 import numpy as np   
@@ -22,8 +22,8 @@ from sklearn.ensemble import AdaBoostClassifier
 from keras.models import Sequential
 from keras.layers import Dense
 #Evaluation
-from sklearn.model_selection import train_test_split,cross_val_score,cross_validate
-from sklearn.metrics import confusion_matrix, classification_report,plot_confusion_matrix
+from sklearn.model_selection import train_test_split,cross_val_score,cross_validate,cross_val_predict
+from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.metrics import roc_curve,auc
 #for warning 
@@ -33,7 +33,7 @@ filterwarnings("ignore")
 
 # ## Function definations 
 
-# In[105]:
+# In[55]:
 
 
 def violin_plot(nrow=4,ncol=2): 
@@ -58,12 +58,12 @@ def violin_plot(nrow=4,ncol=2):
     
 ##############################################################################################################
         
-def plot_auc(fpr,tpr,auc_model):
+def plot_roc(fpr,tpr,auc_model,name_of_algo):
     """
     This function pots the ROC curve with help of False positive rate
     and True positive rate and auc object
     
-    input : false positive rate, ture positive rate,auc of model
+    input : false positive rate, ture positive rate,auc of model,name_of_algo
     
     output : ROC plot 
     
@@ -74,7 +74,7 @@ def plot_auc(fpr,tpr,auc_model):
     plt.plot(fpr, tpr, label='RF (area = {:.3f})'.format(auc_model))
     plt.xlabel('False positive rate')
     plt.ylabel('True positive rate')
-    plt.title('ROC curve')
+    plt.title('ROC curve of '+name_of_algo)
     plt.legend(loc='best')
     plt.show()
  
@@ -137,8 +137,15 @@ def z_score(df):
         df_std[column] = (df_std[column] - df_std[column].mean()) / df_std[column].std()     
     return df_std
 
+##############################################################################################################
 
-# In[106]:
+def plot_confusion_matrix(conf_mat):
+    df_cm = pd.DataFrame(conf_mat)
+    plt.figure(figsize = (10,7))
+    sn.heatmap(df_cm, annot=True)
+
+
+# In[56]:
 
 
 # loading of PIMA dataset 
@@ -160,38 +167,39 @@ attributes = data.drop("Outcome",axis=1).columns
 
 # ## EDA
 
-# In[107]:
+# In[57]:
 
 
 data.head()
 
 
-# In[108]:
+# In[58]:
 
 
 data.info();
 
 
-# In[109]:
+# In[59]:
 
 
 data.describe()
+print(data.describe())
 
 
-# In[110]:
+# In[60]:
 
 
 ax=data["Outcome"].value_counts().plot(kind="bar",color=["blue","red"])
 ax.set_xticklabels(['Diabetes','No Diabetes'],rotation=0);
 
 
-# In[111]:
+# In[61]:
 
 
 violin_plot()
 
 
-# In[112]:
+# In[62]:
 
 
 # Pairwise plot of all attributes 
@@ -201,7 +209,7 @@ sns.pairplot(data,hue='Outcome',palette='gnuplot');
 
 # ## Data processing 
 
-# In[113]:
+# In[63]:
 
 
 # replacing missing value with nan value
@@ -211,7 +219,7 @@ data[nan_replacement_att]=data[nan_replacement_att].replace(0,np.nan)
 median_target_all()  # median_target_all replaces nan value with median of that attribute grouped by outcome 
 
 
-# In[114]:
+# In[64]:
 
 
 outliers_removal() # replacing outliers with Nan 
@@ -219,13 +227,13 @@ outliers_removal() # replacing outliers with Nan
 median_target_all()
 
 
-# In[115]:
+# In[65]:
 
 
 print(data.isna().sum())
 
 
-# In[116]:
+# In[66]:
 
 
 fig = plt.figure(figsize=(14,15))
@@ -241,7 +249,7 @@ for attribute in attributes:
 plt.show()
 
 
-# In[117]:
+# In[67]:
 
 
 
@@ -249,22 +257,21 @@ sns.set(style="ticks", color_codes=True)
 sns.pairplot(data,hue='Outcome',palette='gnuplot');
 
 
-# In[118]:
+# In[68]:
 
 
 violin_plot()
 
 
-# In[119]:
+# In[1]:
 
 
 # standardization of dataset
 data_std=z_score(data)
-processed_data_mean=data_std.mean()
-processed_data_std=data_std.std()
+data_stdta_std.describe()
 
 
-# In[120]:
+# In[70]:
 
 
 # It shows the correlation(positive,neagative) between different columns(only integer value columns) 
@@ -275,7 +282,7 @@ ax = sns.heatmap(corr_matrix,annot=True,linewidth=0.5,fmt=".2f",cmap="YlOrBr")
 
 # ###### Distribution of data set 
 
-# In[121]:
+# In[71]:
 
 
 y = data["Outcome"]
@@ -310,9 +317,10 @@ X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
 # ```
 # 
 
-# In[122]:
+# In[72]:
 
 
+from sklearn.model_selection import train_test_split,cross_val_score,cross_validate,cross_val_predict
 list_of_algo=[LogisticRegression(),GaussianNB(),SVC(probability=True),KNeighborsClassifier(),
               RandomForestClassifier(),AdaBoostClassifier(),XGBClassifier()]
 
@@ -328,32 +336,43 @@ for i,algorithm in enumerate(list_of_algo):
     model.fit(X_train,y_train)
     y_pred=model.predict(X_test)
     model_score=cross_validate(model,X,y,cv=10,scoring=score)
+    y_pred_cross = cross_val_predict(model,X,y,cv=10)
     
+    ## Evalution of model 
+    
+    conf_mat = confusion_matrix(y, y_pred_cross)
+    df_cm = pd.DataFrame(conf_mat)
+    sensitivity = conf_mat[0,0]/(conf_mat[0,0]+conf_mat[0,1]) #sensitivity = tp/
+    specificity = conf_mat[1,1]/(conf_mat[1,0]+conf_mat[1,1])
+    # Roc  
     y_pred_prob = model.predict_proba(X_test)[:, 1]
     fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob)
     auc_model = auc(fpr, tpr)
-    
     print("*"*120)
-    score_table=pd.DataFrame(model_score).drop("score_time",axis=1).mean()
-    print(score_table)
-    final_table.append(score_table,ignore_index=True)
+    print()
+    try :
+        print(model.coef_)
+    except:
+        try:
+            print(model.feature_importances_)
+        except :
+            print("null")
+    print()
     print('AUC of {} : {:.3f} '.format(name_of_algo[i],(auc_model)))
-    print('AVG AUC of {} : {:.3f} + {:.3f} '.format(name_of_algo[i],(model_score["test_roc_auc"].mean()*100),model_score["test_roc_auc"].std()))
-    print('Precision of {} : {:.3f} '.format(name_of_algo[i],(precision_score(y_test,y_pred)*100)))
-    print('Recall of {} : {:.3f} '.format(name_of_algo[i],(recall_score(y_test,y_pred)*100)))
-    plot_auc(fpr,tpr,auc_model)
-    plot_confusion_matrix(model, X_test, y_test,values_format="d")
+    print('AVG AUC of {} : {:.3f} + {:.3f} '.format(name_of_algo[i],(model_score["test_roc_auc"].mean()*100),
+                                                    model_score["test_roc_auc"].std()))
+    print('Specificity of {} : {:.3f} '.format(name_of_algo[i],specificity))
+    print('Sensitivity of {} : {:.3f} '.format(name_of_algo[i],sensitivity))
+    
+   
+
+    plot_roc(fpr,tpr,auc_model,name_of_algo[i])
+    sns.heatmap(df_cm, annot=True,fmt="d")
     plt.title(name_of_algo[i])
     plt.show()    
 
 
-# In[123]:
-
-
-print(final_table)
-
-
-# In[124]:
+# In[73]:
 
 
 
@@ -372,7 +391,7 @@ _, nn_acc = model.evaluate(X_test, y_test)
 y_pred = model.predict(X_test).ravel()
 fpr, tpr, thresholds = roc_curve(y_test, y_pred)
 auc_nn = auc(fpr, tpr)
-plot_auc(fpr,tpr,auc_nn)
+plot_roc(fpr,tpr,auc_nn,"Neural network")
 
 
 # ### Grid search for Random forest classifier
@@ -423,11 +442,11 @@ plot_auc(fpr,tpr,auc_nn)
 
 # ## Finalizing optimal model for web application 
 
-# In[125]:
+# In[74]:
 
 
 y = data["Outcome"]
-X=data.drop(["Outcome"],axis=1)
+X=data_std.drop(["Outcome"],axis=1)
 X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
 model_opt = XGBClassifier(colsample_bytree = 0.5,max_depth = 8,n_estimators=100,
                           reg_alpha=1.1,reg_lambda=1.1, subsample=1,gamma=1.5)
@@ -441,7 +460,7 @@ print("score {:.4f} + {:.4f}".format(model_score.mean(),model_score.std()))
 
 # ## Storing trained model in a file 
 
-# In[126]:
+# In[75]:
 
 
 import pickle
