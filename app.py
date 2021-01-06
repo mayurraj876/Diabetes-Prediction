@@ -1,7 +1,6 @@
 from flask import Flask, request, url_for, redirect, render_template
 import pickle
 import pandas as pd
-from PROJECT import processed_data_mean, attributes
 
 app = Flask(__name__)
 
@@ -20,10 +19,10 @@ def predict():
     row_dict = {}
     for attribute in attributes:
         temp = float(request.form[attribute])
-        row_dict[attributes[attribute]] = (
+        row_dict[attribute] = (
             temp - data[attribute].mean()) / data[attribute].std()
 
-    """    pregnancy = float(request.form['1'])
+    """spregnancy = float(request.form['1'])
     glucose = float(request.form['2'])
     blood_pressure = float(request.form['3'])
     skin_thickness = float(request.form['4'])
@@ -35,11 +34,12 @@ def predict():
                                       skin_thickness, insulin, bmi, diabetes_pedigree_function, age])])
     """
     # print(row_df)
-    row_df = pd.DataFrame(row_dict)
+    #row_df = pd.DataFrame(row_dict)
+    # = pd.DataFrame(row_dict)
+    row_df = pd.Series(row_dict).to_frame()
     print(row_df)
     prediction = model.predict_proba(row_df)
     output = '{0:.{1}f}'.format(prediction[0][1], 2)
-    print(output)
 
     if output > str(0.5):
         return render_template('result.html', pred='You might have chance of having diabetes.\n Probability of having Diabetes is {}'.format(output))

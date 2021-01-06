@@ -3,7 +3,7 @@
 
 # # Prediction of Diabetes based on given attribute using PIMA Diabetes dataset
 
-# In[ ]:
+# In[3]:
 
 
 import numpy as np   
@@ -33,7 +33,7 @@ filterwarnings("ignore")
 
 # ## Function definations 
 
-# In[55]:
+# In[4]:
 
 
 def violin_plot(nrow=4,ncol=2): 
@@ -145,7 +145,7 @@ def plot_confusion_matrix(conf_mat):
     sn.heatmap(df_cm, annot=True)
 
 
-# In[56]:
+# In[5]:
 
 
 # loading of PIMA dataset 
@@ -167,39 +167,39 @@ attributes = data.drop("Outcome",axis=1).columns
 
 # ## EDA
 
-# In[57]:
+# In[6]:
 
 
 data.head()
 
 
-# In[58]:
+# In[7]:
 
 
 data.info();
 
 
-# In[59]:
+# In[8]:
 
 
 data.describe()
 print(data.describe())
 
 
-# In[60]:
+# In[9]:
 
 
 ax=data["Outcome"].value_counts().plot(kind="bar",color=["blue","red"])
 ax.set_xticklabels(['Diabetes','No Diabetes'],rotation=0);
 
 
-# In[61]:
+# In[10]:
 
 
 violin_plot()
 
 
-# In[62]:
+# In[11]:
 
 
 # Pairwise plot of all attributes 
@@ -209,7 +209,7 @@ sns.pairplot(data,hue='Outcome',palette='gnuplot');
 
 # ## Data processing 
 
-# In[63]:
+# In[12]:
 
 
 # replacing missing value with nan value
@@ -219,7 +219,7 @@ data[nan_replacement_att]=data[nan_replacement_att].replace(0,np.nan)
 median_target_all()  # median_target_all replaces nan value with median of that attribute grouped by outcome 
 
 
-# In[64]:
+# In[13]:
 
 
 outliers_removal() # replacing outliers with Nan 
@@ -227,13 +227,13 @@ outliers_removal() # replacing outliers with Nan
 median_target_all()
 
 
-# In[65]:
+# In[14]:
 
 
 print(data.isna().sum())
 
 
-# In[66]:
+# In[15]:
 
 
 fig = plt.figure(figsize=(14,15))
@@ -249,7 +249,7 @@ for attribute in attributes:
 plt.show()
 
 
-# In[67]:
+# In[16]:
 
 
 
@@ -257,21 +257,21 @@ sns.set(style="ticks", color_codes=True)
 sns.pairplot(data,hue='Outcome',palette='gnuplot');
 
 
-# In[68]:
+# In[17]:
 
 
 violin_plot()
 
 
-# In[1]:
+# In[19]:
 
 
 # standardization of dataset
 data_std=z_score(data)
-data_stdta_std.describe()
+data_std.describe()
 
 
-# In[70]:
+# In[20]:
 
 
 # It shows the correlation(positive,neagative) between different columns(only integer value columns) 
@@ -282,7 +282,7 @@ ax = sns.heatmap(corr_matrix,annot=True,linewidth=0.5,fmt=".2f",cmap="YlOrBr")
 
 # ###### Distribution of data set 
 
-# In[71]:
+# In[21]:
 
 
 y = data["Outcome"]
@@ -317,7 +317,7 @@ X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
 # ```
 # 
 
-# In[72]:
+# In[22]:
 
 
 from sklearn.model_selection import train_test_split,cross_val_score,cross_validate,cross_val_predict
@@ -330,7 +330,7 @@ name_of_algo=["LogisticRegression","GaussianNB","SVM","KNeighborsClassifier",
 score = {"accuracy": "accuracy",
          "prec": "precision","recall" : "recall",
          "f1" : "f1","roc_auc" : "roc_auc"}
-final_table=pd.DataFrame()
+
 for i,algorithm in enumerate(list_of_algo):
     model=algorithm
     model.fit(X_train,y_train)
@@ -372,7 +372,7 @@ for i,algorithm in enumerate(list_of_algo):
     plt.show()    
 
 
-# In[73]:
+# In[23]:
 
 
 
@@ -384,7 +384,7 @@ model.add(Dense(64, activation='relu'))
 model.add(Dense(64, activation='relu'))
 model.add(Dense(1, activation='sigmoid'))
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-model_fit=model.fit(X_train, y_train, epochs=200, batch_size=8)
+model_fit=model.fit(X_train, y_train, epochs=200, batch_size=8);
 
 _, nn_acc = model.evaluate(X_test, y_test)
 
@@ -442,7 +442,7 @@ plot_roc(fpr,tpr,auc_nn,"Neural network")
 
 # ## Finalizing optimal model for web application 
 
-# In[74]:
+# In[24]:
 
 
 y = data["Outcome"]
@@ -460,7 +460,7 @@ print("score {:.4f} + {:.4f}".format(model_score.mean(),model_score.std()))
 
 # ## Storing trained model in a file 
 
-# In[75]:
+# In[31]:
 
 
 import pickle
@@ -469,6 +469,12 @@ pickle.dump(model_opt, open("Diabetes.pkl", "wb"))
 loaded_model = pickle.load(open("Diabetes.pkl", "rb"))
 loaded_model.predict(X_test)
 loaded_model.score(X_test,y_test)
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
