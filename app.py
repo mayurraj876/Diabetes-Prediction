@@ -22,17 +22,6 @@ def predict():
         row_dict[attribute] = (
             temp - data[attribute].mean()) / data[attribute].std()
 
-    """spregnancy = float(request.form['1'])
-    glucose = float(request.form['2'])
-    blood_pressure = float(request.form['3'])
-    skin_thickness = float(request.form['4'])
-    insulin = float(request.form['5'])
-    bmi = float(request.form['6'])
-    diabetes_pedigree_function = float(request.form['7'])
-    age = float(request.form['8'])
-    row_df = pd.DataFrame([pd.Series([pregnancy, glucose, blood_pressure,
-                                      skin_thickness, insulin, bmi, diabetes_pedigree_function, age])])
-    """
     # print(row_df)
     #row_df = pd.DataFrame(row_dict)
     # = pd.DataFrame(row_dict)

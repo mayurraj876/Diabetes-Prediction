@@ -3,7 +3,7 @@
 
 # # Prediction of Diabetes based on given attribute using PIMA Diabetes dataset
 
-# In[3]:
+# In[2]:
 
 
 import numpy as np   
@@ -33,7 +33,7 @@ filterwarnings("ignore")
 
 # ## Function definations 
 
-# In[4]:
+# In[3]:
 
 
 def violin_plot(nrow=4,ncol=2): 
@@ -145,7 +145,7 @@ def plot_confusion_matrix(conf_mat):
     sn.heatmap(df_cm, annot=True)
 
 
-# In[5]:
+# In[4]:
 
 
 # loading of PIMA dataset 
@@ -167,39 +167,39 @@ attributes = data.drop("Outcome",axis=1).columns
 
 # ## EDA
 
-# In[6]:
+# In[5]:
 
 
 data.head()
 
 
-# In[7]:
+# In[6]:
 
 
 data.info();
 
 
-# In[8]:
+# In[7]:
 
 
 data.describe()
 print(data.describe())
 
 
-# In[9]:
+# In[8]:
 
 
 ax=data["Outcome"].value_counts().plot(kind="bar",color=["blue","red"])
 ax.set_xticklabels(['Diabetes','No Diabetes'],rotation=0);
 
 
-# In[10]:
+# In[9]:
 
 
 violin_plot()
 
 
-# In[11]:
+# In[10]:
 
 
 # Pairwise plot of all attributes 
@@ -209,7 +209,7 @@ sns.pairplot(data,hue='Outcome',palette='gnuplot');
 
 # ## Data processing 
 
-# In[12]:
+# In[11]:
 
 
 # replacing missing value with nan value
@@ -219,7 +219,7 @@ data[nan_replacement_att]=data[nan_replacement_att].replace(0,np.nan)
 median_target_all()  # median_target_all replaces nan value with median of that attribute grouped by outcome 
 
 
-# In[13]:
+# In[12]:
 
 
 outliers_removal() # replacing outliers with Nan 
@@ -227,13 +227,13 @@ outliers_removal() # replacing outliers with Nan
 median_target_all()
 
 
-# In[14]:
+# In[13]:
 
 
 print(data.isna().sum())
 
 
-# In[15]:
+# In[14]:
 
 
 fig = plt.figure(figsize=(14,15))
@@ -249,7 +249,7 @@ for attribute in attributes:
 plt.show()
 
 
-# In[16]:
+# In[15]:
 
 
 
@@ -257,13 +257,13 @@ sns.set(style="ticks", color_codes=True)
 sns.pairplot(data,hue='Outcome',palette='gnuplot');
 
 
-# In[17]:
+# In[16]:
 
 
 violin_plot()
 
 
-# In[19]:
+# In[17]:
 
 
 # standardization of dataset
@@ -271,7 +271,7 @@ data_std=z_score(data)
 data_std.describe()
 
 
-# In[20]:
+# In[18]:
 
 
 # It shows the correlation(positive,neagative) between different columns(only integer value columns) 
@@ -282,7 +282,7 @@ ax = sns.heatmap(corr_matrix,annot=True,linewidth=0.5,fmt=".2f",cmap="YlOrBr")
 
 # ###### Distribution of data set 
 
-# In[21]:
+# In[19]:
 
 
 y = data["Outcome"]
@@ -317,10 +317,10 @@ X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
 # ```
 # 
 
-# In[22]:
+# In[31]:
 
 
-from sklearn.model_selection import train_test_split,cross_val_score,cross_validate,cross_val_predict
+from collections import defaultdict
 list_of_algo=[LogisticRegression(),GaussianNB(),SVC(probability=True),KNeighborsClassifier(),
               RandomForestClassifier(),AdaBoostClassifier(),XGBClassifier()]
 
@@ -330,6 +330,7 @@ name_of_algo=["LogisticRegression","GaussianNB","SVM","KNeighborsClassifier",
 score = {"accuracy": "accuracy",
          "prec": "precision","recall" : "recall",
          "f1" : "f1","roc_auc" : "roc_auc"}
+final_Result=defaultdict(list)
 
 for i,algorithm in enumerate(list_of_algo):
     model=algorithm
@@ -344,6 +345,10 @@ for i,algorithm in enumerate(list_of_algo):
     df_cm = pd.DataFrame(conf_mat)
     sensitivity = conf_mat[0,0]/(conf_mat[0,0]+conf_mat[0,1]) #sensitivity = tp/
     specificity = conf_mat[1,1]/(conf_mat[1,0]+conf_mat[1,1])
+    avg_auc="{:.3f} +- {:.3f}".format((model_score["test_roc_auc"].mean()*100),(model_score["test_roc_auc"].std()))
+    #str(model_score["test_roc_auc"].mean()*100)+"+-"+str(model_score["test_roc_auc"].std())
+    avg_accuracy="{:.3f} +- {:.3f}".format((model_score["test_accuracy"].mean()*100),(model_score["test_accuracy"].std()))
+    #str(model_score["test_accuracy"].mean()*100)+"+-"+str(model_score["test_accuracy"].std())
     # Roc  
     y_pred_prob = model.predict_proba(X_test)[:, 1]
     fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob)
@@ -359,12 +364,14 @@ for i,algorithm in enumerate(list_of_algo):
             print("null")
     print()
     print('AUC of {} : {:.3f} '.format(name_of_algo[i],(auc_model)))
-    print('AVG AUC of {} : {:.3f} + {:.3f} '.format(name_of_algo[i],(model_score["test_roc_auc"].mean()*100),
-                                                    model_score["test_roc_auc"].std()))
+    print('AVG AUC of {} : {} '.format(name_of_algo[i],avg_auc))
     print('Specificity of {} : {:.3f} '.format(name_of_algo[i],specificity))
     print('Sensitivity of {} : {:.3f} '.format(name_of_algo[i],sensitivity))
-    
-   
+    final_Result["specificity"].append(specificity)
+    final_Result["sensitivity"].append(sensitivity)
+    final_Result["accuracy"].append(avg_accuracy)
+    final_Result["AUC(ROC)"].append(avg_auc)
+    final_Result["model"].append(name_of_algo[i])
 
     plot_roc(fpr,tpr,auc_model,name_of_algo[i])
     sns.heatmap(df_cm, annot=True,fmt="d")
@@ -372,7 +379,13 @@ for i,algorithm in enumerate(list_of_algo):
     plt.show()    
 
 
-# In[23]:
+# In[32]:
+
+
+pd.DataFrame.from_dict(final_Result)
+
+
+# In[21]:
 
 
 
@@ -442,7 +455,7 @@ plot_roc(fpr,tpr,auc_nn,"Neural network")
 
 # ## Finalizing optimal model for web application 
 
-# In[24]:
+# In[22]:
 
 
 y = data["Outcome"]
@@ -460,7 +473,7 @@ print("score {:.4f} + {:.4f}".format(model_score.mean(),model_score.std()))
 
 # ## Storing trained model in a file 
 
-# In[31]:
+# In[23]:
 
 
 import pickle
