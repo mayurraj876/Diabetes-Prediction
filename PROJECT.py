@@ -3,7 +3,7 @@
 
 # # Prediction of Diabetes based on given attribute using PIMA Diabetes dataset
 
-# In[73]:
+# In[3]:
 
 
 import numpy as np   
@@ -22,8 +22,8 @@ from sklearn.ensemble import AdaBoostClassifier
 from keras.models import Sequential
 from keras.layers import Dense
 #Evaluation
-from sklearn.model_selection import train_test_split,cross_val_score
-from sklearn.metrics import confusion_matrix, classification_report,plot_confusion_matrix
+from sklearn.model_selection import train_test_split,cross_val_score,cross_validate,cross_val_predict
+from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.metrics import roc_curve,auc
 #for warning 
@@ -33,7 +33,7 @@ filterwarnings("ignore")
 
 # ## Function definations 
 
-# In[28]:
+# In[4]:
 
 
 def violin_plot(nrow=4,ncol=2): 
@@ -55,13 +55,15 @@ def violin_plot(nrow=4,ncol=2):
         sns.violinplot(x="Outcome", y=attribute, data=data)
         index+=1
     plt.show()
+    
+##############################################################################################################
         
-def plot_auc(fpr,tpr,auc_model):
+def plot_roc(fpr,tpr,auc_model,name_of_algo):
     """
     This function pots the ROC curve with help of False positive rate
     and True positive rate and auc object
     
-    input : false positive rate, ture positive rate,auc of model
+    input : false positive rate, ture positive rate,auc of model,name_of_algo
     
     output : ROC plot 
     
@@ -72,10 +74,11 @@ def plot_auc(fpr,tpr,auc_model):
     plt.plot(fpr, tpr, label='RF (area = {:.3f})'.format(auc_model))
     plt.xlabel('False positive rate')
     plt.ylabel('True positive rate')
-    plt.title('ROC curve')
+    plt.title('ROC curve of '+name_of_algo)
     plt.legend(loc='best')
     plt.show()
  
+#############################################################################################################
 
 # calculation of median for each attribute for both possible outcome  
 def median_target(attribute):
@@ -96,11 +99,15 @@ def median_target(attribute):
     mean_op_1=temp[attribute][1]
     data.loc[(data['Outcome'] == 0 ) & (data[attribute].isnull()), attribute] = mean_op_0 #assigning mean to null values 
     data.loc[(data['Outcome'] == 1 ) & (data[attribute].isnull()), attribute] = mean_op_1
+    
+##############################################################################################################
 
 def median_target_all():
     # calling meadian_target for each attribute
     for attribute in attributes:
             median_target(attribute) 
+
+##############################################################################################################
         
 def outliers_removal():
     """
@@ -116,10 +123,13 @@ def outliers_removal():
         fence_high = q3 + 1.5 * iqr
         data.loc[(data[attribute] < fence_low) | (data[attribute] > fence_high),attribute]=np.nan
 
+##############################################################################################################
         
 def z_score(df):
     """Function for apply z score standardization
+    
        Input: dataframe to be standardized
+       
        output :standardized dataframe 
     """
     df_std = df.copy()
@@ -127,8 +137,15 @@ def z_score(df):
         df_std[column] = (df_std[column] - df_std[column].mean()) / df_std[column].std()     
     return df_std
 
+##############################################################################################################
 
-# In[29]:
+def plot_confusion_matrix(conf_mat):
+    df_cm = pd.DataFrame(conf_mat)
+    plt.figure(figsize = (10,7))
+    sn.heatmap(df_cm, annot=True)
+
+
+# In[5]:
 
 
 # loading of PIMA dataset 
@@ -150,38 +167,39 @@ attributes = data.drop("Outcome",axis=1).columns
 
 # ## EDA
 
-# In[30]:
+# In[6]:
 
 
 data.head()
 
 
-# In[52]:
+# In[7]:
 
 
 data.info();
 
 
-# In[32]:
+# In[8]:
 
 
 data.describe()
+print(data.describe())
 
 
-# In[33]:
+# In[9]:
 
 
 ax=data["Outcome"].value_counts().plot(kind="bar",color=["blue","red"])
 ax.set_xticklabels(['Diabetes','No Diabetes'],rotation=0);
 
 
-# In[34]:
+# In[10]:
 
 
 violin_plot()
 
 
-# In[35]:
+# In[11]:
 
 
 # Pairwise plot of all attributes 
@@ -191,7 +209,7 @@ sns.pairplot(data,hue='Outcome',palette='gnuplot');
 
 # ## Data processing 
 
-# In[36]:
+# In[12]:
 
 
 # replacing missing value with nan value
@@ -201,7 +219,7 @@ data[nan_replacement_att]=data[nan_replacement_att].replace(0,np.nan)
 median_target_all()  # median_target_all replaces nan value with median of that attribute grouped by outcome 
 
 
-# In[37]:
+# In[13]:
 
 
 outliers_removal() # replacing outliers with Nan 
@@ -209,13 +227,13 @@ outliers_removal() # replacing outliers with Nan
 median_target_all()
 
 
-# In[38]:
+# In[14]:
 
 
 print(data.isna().sum())
 
 
-# In[39]:
+# In[15]:
 
 
 fig = plt.figure(figsize=(14,15))
@@ -231,7 +249,7 @@ for attribute in attributes:
 plt.show()
 
 
-# In[40]:
+# In[16]:
 
 
 
@@ -239,20 +257,21 @@ sns.set(style="ticks", color_codes=True)
 sns.pairplot(data,hue='Outcome',palette='gnuplot');
 
 
-# In[41]:
+# In[17]:
 
 
 violin_plot()
 
 
-# In[42]:
+# In[19]:
 
 
 # standardization of dataset
 data_std=z_score(data)
+data_std.describe()
 
 
-# In[43]:
+# In[20]:
 
 
 # It shows the correlation(positive,neagative) between different columns(only integer value columns) 
@@ -263,7 +282,7 @@ ax = sns.heatmap(corr_matrix,annot=True,linewidth=0.5,fmt=".2f",cmap="YlOrBr")
 
 # ###### Distribution of data set 
 
-# In[44]:
+# In[21]:
 
 
 y = data["Outcome"]
@@ -274,121 +293,86 @@ X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
 # ## Models 
 
 # ### Code using PCA for reducing dimensionality 
-#     from sklearn.decomposition import PCA
-#     from sklearn.pipeline import Pipeline
-#     for i in range(1,9):
+# ``` python 
+# from sklearn.decomposition import PCA
+# from sklearn.pipeline import Pipeline
+# for i in range(1,9):
 # 
-#         list_of_algo=[LogisticRegression(),GaussianNB(),SVC(probability=True),KNeighborsClassifier(),
-#                       RandomForestClassifier(),AdaBoostClassifier(),XGBClassifier()]
+#     list_of_algo=[LogisticRegression(),GaussianNB(),SVC(probability=True),KNeighborsClassifier(),
+#                   RandomForestClassifier(),AdaBoostClassifier(),XGBClassifier()]
 # 
-#         name_of_algo=["LogisticRegression","GaussianNB","SVM","KNeighborsClassifier",
-#                       "RandomForestClassifier","AdaBoostClassifier","XGBClassifier"]
-#         for i,algorithm in enumerate(list_of_algo):
-#             steps = [('pca', PCA(n_components=i)), ('m', algorithm)]
-#             model = Pipeline(steps=steps)
+#     name_of_algo=["LogisticRegression","GaussianNB","SVM","KNeighborsClassifier",
+#                   "RandomForestClassifier","AdaBoostClassifier","XGBClassifier"]
+#     for i,algorithm in enumerate(list_of_algo):
+#         steps = [('pca', PCA(n_components=i)), ('m', algorithm)]
+#         model = Pipeline(steps=steps)
 # 
-#             #### Evaluate model
-#             model_score = cross_val_score(model, X, y, scoring='roc_auc',cv=10)
-#             print("*"*120)
-#             print('Accuracy of {} : {} '.format(name_of_algo[i],(model_score.mean()*100)))
-#         print(" ")
-#         print("#"*120)
-#         print("")
+#         #### Evaluate model
+#         model_score = cross_val_score(model, X, y, scoring='roc_auc',cv=10)
+#         print("*"*120)
+#         print('Accuracy of {} : {} '.format(name_of_algo[i],(model_score.mean()*100)))
+#     print(" ")
+#     print("#"*120)
+#     print("")
+# ```
 # 
 
-# In[74]:
+# In[22]:
 
 
+from sklearn.model_selection import train_test_split,cross_val_score,cross_validate,cross_val_predict
 list_of_algo=[LogisticRegression(),GaussianNB(),SVC(probability=True),KNeighborsClassifier(),
               RandomForestClassifier(),AdaBoostClassifier(),XGBClassifier()]
 
 name_of_algo=["LogisticRegression","GaussianNB","SVM","KNeighborsClassifier",
               "RandomForestClassifier","AdaBoostClassifier","XGBClassifier"]
 
+score = {"accuracy": "accuracy",
+         "prec": "precision","recall" : "recall",
+         "f1" : "f1","roc_auc" : "roc_auc"}
+
 for i,algorithm in enumerate(list_of_algo):
     model=algorithm
     model.fit(X_train,y_train)
     y_pred=model.predict(X_test)
-    model_score=cross_val_score(model,X,y,cv=10,scoring="roc_auc")
+    model_score=cross_validate(model,X,y,cv=10,scoring=score)
+    y_pred_cross = cross_val_predict(model,X,y,cv=10)
+    
+    ## Evalution of model 
+    
+    conf_mat = confusion_matrix(y, y_pred_cross)
+    df_cm = pd.DataFrame(conf_mat)
+    sensitivity = conf_mat[0,0]/(conf_mat[0,0]+conf_mat[0,1]) #sensitivity = tp/
+    specificity = conf_mat[1,1]/(conf_mat[1,0]+conf_mat[1,1])
+    # Roc  
     y_pred_prob = model.predict_proba(X_test)[:, 1]
     fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob)
     auc_model = auc(fpr, tpr)
     print("*"*120)
+    print()
+    try :
+        print(model.coef_)
+    except:
+        try:
+            print(model.feature_importances_)
+        except :
+            print("null")
+    print()
     print('AUC of {} : {:.3f} '.format(name_of_algo[i],(auc_model)))
-    print('AVG AUC of {} : {:.3f} + {:.3f} '.format(name_of_algo[i],(model_score.mean()*100),model_score.std()))
-    print('Precision of {} : {:.3f} '.format(name_of_algo[i],(precision_score(y_test,y_pred)*100)))
-    print('Recall of {} : {:.3f} '.format(name_of_algo[i],(recall_score(y_test,y_pred)*100)))
-    plot_auc(fpr,tpr,auc_model)
-    plot_confusion_matrix(model, X_test, y_test,values_format="d")
+    print('AVG AUC of {} : {:.3f} + {:.3f} '.format(name_of_algo[i],(model_score["test_roc_auc"].mean()*100),
+                                                    model_score["test_roc_auc"].std()))
+    print('Specificity of {} : {:.3f} '.format(name_of_algo[i],specificity))
+    print('Sensitivity of {} : {:.3f} '.format(name_of_algo[i],sensitivity))
+    
+   
+
+    plot_roc(fpr,tpr,auc_model,name_of_algo[i])
+    sns.heatmap(df_cm, annot=True,fmt="d")
     plt.title(name_of_algo[i])
     plt.show()    
 
 
-# ### Grid search for Random forest classifier
-#     """
-#     from sklearn.model_selection import GridSearchCV
-#     print(RandomForestClassifier())
-#     n_estimators = [100, 200, 250, 300, 350]
-#     max_depth = [1, 3, 4, 5, 8, 10]
-#     min_samples_split = [10, 15, 20, 25, 30, 100]
-#     min_samples_leaf = [1, 2, 4, 5, 7] 
-#     max_features = ['auto', 'sqrt']
-#     criterion=['gini']
-#     bootstrap = [True, False]
-#     rfr=RandomForestClassifier()
-#     hyperF = dict(n_estimators = n_estimators, max_depth = max_depth,criterion=criterion,
-#                   max_features = max_features,  min_samples_split = min_samples_split, 
-#                   min_samples_leaf = min_samples_leaf,bootstrap = bootstrap)
-# 
-#     gridF = GridSearchCV(rfr, hyperF,scoring='accuracy', cv = 3, verbose = 1, 
-#                           n_jobs = -1)
-#     bestF = gridF.fit(X_train, y_train)
-#     """
-# 
-# ### Grid search for XGB Classifer 
-#     """
-#     from sklearn.model_selection import GridSearchCV
-#     model = XGBClassifier()
-#     param_grid = {
-#         'n_estimators': [100,200,300,],
-#         'colsample_bytree': [0.5,0.6,0.7],
-#         'max_depth': [3,5,8],
-#         'reg_alpha': [1.1, 1.2, 1.3],
-#         'reg_lambda': [1.1, 1.2, 1.3],
-#         'subsample': [0.8, 0.9,1,1.1],
-#         'gamma':[1.4,1.5,1.6,]
-#     }
-#     gs = GridSearchCV(
-#             estimator=model,
-#             param_grid=param_grid, 
-#             cv=10, 
-#             n_jobs=-1, 
-#             scoring="roc_auc",
-#             verbose=2
-#         )
-#     gsf=gs.fit(X_train,y_train)
-#     print(gsf.best_params_)
-#     """
-
-# ## Finalizing optimal model for web application 
-
-# In[72]:
-
-
-y = data["Outcome"]
-X=data.drop(["Outcome"],axis=1)
-X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
-model_opt = XGBClassifier(colsample_bytree = 0.5,max_depth = 8,n_estimators=100,
-                          reg_alpha=1.1,reg_lambda=1.1, subsample=1,gamma=1.5)
-
-model_opt.fit(X_train,y_train)
-model_score=cross_val_score(model_opt,X,y,cv=10,scoring="roc_auc")
-
-print(model_opt.score(X_test,y_test))
-print("score {:.4f} + {:.4f}".format(model_score.mean(),model_score.std()))
-
-
-# In[47]:
+# In[23]:
 
 
 
@@ -400,19 +384,83 @@ model.add(Dense(64, activation='relu'))
 model.add(Dense(64, activation='relu'))
 model.add(Dense(1, activation='sigmoid'))
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-model_fit=model.fit(X_train, y_train, epochs=200, batch_size=8)
+model_fit=model.fit(X_train, y_train, epochs=200, batch_size=8);
 
 _, nn_acc = model.evaluate(X_test, y_test)
 
 y_pred = model.predict(X_test).ravel()
 fpr, tpr, thresholds = roc_curve(y_test, y_pred)
 auc_nn = auc(fpr, tpr)
-plot_auc(fpr,tpr,auc_nn)
+plot_roc(fpr,tpr,auc_nn,"Neural network")
+
+
+# ### Grid search for Random forest classifier
+# ```python    
+# from sklearn.model_selection import GridSearchCV
+# print(RandomForestClassifier())
+# n_estimators = [100, 200, 250, 300, 350]
+# max_depth = [1, 3, 4, 5, 8, 10]
+# min_samples_split = [10, 15, 20, 25, 30, 100]
+# min_samples_leaf = [1, 2, 4, 5, 7] 
+# max_features = ['auto', 'sqrt']
+# criterion=['gini']
+# bootstrap = [True, False]
+# rfr=RandomForestClassifier()
+# hyperF = dict(n_estimators = n_estimators, max_depth = max_depth,criterion=criterion,
+#               max_features = max_features,  min_samples_split = min_samples_split, 
+#               min_samples_leaf = min_samples_leaf,bootstrap = bootstrap)
+# 
+# gridF = GridSearchCV(rfr, hyperF,scoring='accuracy', cv = 3, verbose = 1, 
+#                       n_jobs = -1)
+# bestF = gridF.fit(X_train, y_train)
+# ```
+# 
+# ### Grid search for XGB Classifer 
+# ```python
+# from sklearn.model_selection import GridSearchCV
+# model = XGBClassifier()
+# param_grid = {
+#     'n_estimators': [100,200,300,],
+#     'colsample_bytree': [0.5,0.6,0.7],
+#     'max_depth': [3,5,8],
+#     'reg_alpha': [1.1, 1.2, 1.3],
+#     'reg_lambda': [1.1, 1.2, 1.3],
+#     'subsample': [0.8, 0.9,1,1.1],
+#     'gamma':[1.4,1.5,1.6,]
+# }
+# gs = GridSearchCV(
+#         estimator=model,
+#         param_grid=param_grid, 
+#         cv=10, 
+#         n_jobs=-1, 
+#         scoring="roc_auc",
+#         verbose=2
+#     )
+# gsf=gs.fit(X_train,y_train)
+# print(gsf.best_params_)
+# ```
+
+# ## Finalizing optimal model for web application 
+
+# In[24]:
+
+
+y = data["Outcome"]
+X=data_std.drop(["Outcome"],axis=1)
+X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
+model_opt = XGBClassifier(colsample_bytree = 0.5,max_depth = 8,n_estimators=100,
+                          reg_alpha=1.1,reg_lambda=1.1, subsample=1,gamma=1.5)
+
+model_opt.fit(X_train,y_train)
+model_score=cross_val_score(model_opt,X,y,cv=10,scoring="roc_auc")
+
+print(model_opt.score(X_test,y_test))
+print("score {:.4f} + {:.4f}".format(model_score.mean(),model_score.std()))
 
 
 # ## Storing trained model in a file 
 
-# In[50]:
+# In[31]:
 
 
 import pickle
@@ -421,6 +469,12 @@ pickle.dump(model_opt, open("Diabetes.pkl", "wb"))
 loaded_model = pickle.load(open("Diabetes.pkl", "rb"))
 loaded_model.predict(X_test)
 loaded_model.score(X_test,y_test)
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
