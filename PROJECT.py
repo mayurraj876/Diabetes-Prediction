@@ -3,7 +3,7 @@
 
 # # Prediction of Diabetes based on given attribute using PIMA Diabetes dataset
 
-# In[103]:
+# In[62]:
 
 
 import numpy as np   
@@ -33,7 +33,7 @@ filterwarnings("ignore")
 
 # ## Function definations 
 
-# In[104]:
+# In[63]:
 
 
 def violin_plot(nrow=4,ncol=2): 
@@ -94,7 +94,7 @@ def median_target(attribute):
     return : none
     """
     temp = data[data[attribute].notnull()]# assigning non null value to temp 
-    temp = temp[[attribute, 'Outcome']].groupby(['Outcome'])[[attribute]].mean().reset_index() #calculate mean for a attribute with either 0 or      1 outcome 
+    temp = temp[[attribute, 'Outcome']].groupby(['Outcome'])[[attribute]].median().reset_index() #calculate mean for a attribute with either 0 or      1 outcome 
     mean_op_0=temp[attribute][0]
     mean_op_1=temp[attribute][1]
     data.loc[(data['Outcome'] == 0 ) & (data[attribute].isnull()), attribute] = mean_op_0 #assigning mean to null values 
@@ -146,7 +146,7 @@ def plot_confusion_matrix(conf_mat):
 
 ##############################################################################################################
 
-def model_evalution(model,name_of_algo,X,y,final_Result):
+def model_evalution(model,name_of_algo[i],X,y,score,final_Result):
     model_score=cross_validate(model,X,y,cv=10,scoring=score)
     y_pred_cross = cross_val_predict(model,X,y,cv=10)
     conf_mat = confusion_matrix(y, y_pred_cross)
@@ -170,7 +170,7 @@ def model_evalution(model,name_of_algo,X,y,final_Result):
     
 
 
-# In[105]:
+# In[64]:
 
 
 # loading of PIMA dataset 
@@ -192,39 +192,39 @@ attributes = data.drop("Outcome",axis=1).columns
 
 # ## EDA
 
-# In[106]:
+# In[65]:
 
 
 data.head()
 
 
-# In[107]:
+# In[66]:
 
 
 data.info();
 
 
-# In[130]:
+# In[67]:
+
 
 
 data.describe()
-data.describe()
 
 
-# In[109]:
+# In[68]:
 
 
 ax=data["Outcome"].value_counts().plot(kind="bar",color=["blue","red"])
 ax.set_xticklabels(['Diabetes','No Diabetes'],rotation=0);
 
 
-# In[110]:
+# In[69]:
 
 
 violin_plot()
 
 
-# In[111]:
+# In[70]:
 
 
 # Pairwise plot of all attributes 
@@ -234,7 +234,7 @@ sns.pairplot(data,hue='Outcome',palette='gnuplot');
 
 # ## Data processing 
 
-# In[112]:
+# In[71]:
 
 
 # replacing missing value with nan value
@@ -244,7 +244,7 @@ data[nan_replacement_att]=data[nan_replacement_att].replace(0,np.nan)
 median_target_all()  # median_target_all replaces nan value with median of that attribute grouped by outcome 
 
 
-# In[113]:
+# In[72]:
 
 
 outliers_removal() # replacing outliers with Nan 
@@ -252,13 +252,13 @@ outliers_removal() # replacing outliers with Nan
 median_target_all()
 
 
-# In[114]:
+# In[73]:
 
 
 print(data.isna().sum())
 
 
-# In[115]:
+# In[74]:
 
 
 fig = plt.figure(figsize=(14,15))
@@ -274,7 +274,7 @@ for attribute in attributes:
 plt.show()
 
 
-# In[116]:
+# In[75]:
 
 
 
@@ -282,13 +282,13 @@ sns.set(style="ticks", color_codes=True)
 sns.pairplot(data,hue='Outcome',palette='gnuplot');
 
 
-# In[117]:
+# In[76]:
 
 
 violin_plot()
 
 
-# In[118]:
+# In[77]:
 
 
 # standardization of dataset
@@ -296,7 +296,7 @@ data_std=z_score(data)
 data_std.describe()
 
 
-# In[119]:
+# In[78]:
 
 
 # It shows the correlation(positive,neagative) between different columns(only integer value columns) 
@@ -307,7 +307,7 @@ ax = sns.heatmap(corr_matrix,annot=True,linewidth=0.5,fmt=".2f",cmap="YlOrBr")
 
 # ###### Distribution of data set 
 
-# In[120]:
+# In[79]:
 
 
 y = data["Outcome"]
@@ -342,7 +342,7 @@ X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
 # ```
 # 
 
-# In[121]:
+# In[80]:
 
 
 from collections import defaultdict
@@ -362,7 +362,7 @@ for i,algorithm in enumerate(list_of_algo):
     y_pred=model.predict(X_test)
     
     ## Evalution of model 
-    final_Result,df_cm = model_evalution(model,name_of_algo[i],X,y,final_Result)
+    final_Result,df_cm = model_evalution(model,name_of_algo[i],X,y,score,final_Result)
     
     # Roc  
     y_pred_prob = model.predict_proba(X_test)[:, 1]
@@ -384,13 +384,13 @@ for i,algorithm in enumerate(list_of_algo):
     plt.show()    
 
 
-# In[122]:
+# In[81]:
 
 
 pd.DataFrame.from_dict(final_Result)
 
 
-# In[123]:
+# In[82]:
 
 
 
@@ -460,7 +460,7 @@ plot_roc(fpr,tpr,auc_nn,"Neural network")
 
 # ## Finalizing optimal model for web application 
 
-# In[129]:
+# In[83]:
 
 
 y = data["Outcome"]
@@ -475,12 +475,17 @@ model_opt.fit(X_train,y_train)
 xgboost_opt_result= defaultdict(list)
 xgboost_opt_result,df_cm = model_evalution(model_opt,"XGBoost",X,y,xgboost_opt_result)
 
+
+
+# In[85]:
+
+
 pd.DataFrame.from_dict(xgboost_opt_result)
 
 
 # ## Storing trained model in a file 
 
-# In[125]:
+# In[84]:
 
 
 import pickle
