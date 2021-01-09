@@ -3,7 +3,7 @@
 
 # # Prediction of Diabetes based on given attribute using PIMA Diabetes dataset
 
-# In[62]:
+# In[1]:
 
 
 import numpy as np   
@@ -33,7 +33,7 @@ filterwarnings("ignore")
 
 # ## Function definations 
 
-# In[63]:
+# In[2]:
 
 
 def violin_plot(nrow=4,ncol=2): 
@@ -139,14 +139,16 @@ def z_score(df):
 
 ##############################################################################################################
 
-def plot_confusion_matrix(conf_mat):
-    df_cm = pd.DataFrame(conf_mat)
-    plt.figure(figsize = (10,7))
-    sn.heatmap(df_cm, annot=True)
+def plot_confusion_matrix(df_cm,name_of_algo):
+    sns.heatmap(df_cm, annot=True,fmt="d")
+    plt.title(name_of_algo)
+    plt.xlabel("Predicted label")
+    plt.ylabel("True label")
+    plt.show()  
 
 ##############################################################################################################
 
-def model_evalution(model,name_of_algo[i],X,y,score,final_Result):
+def model_evalution(model,name_of_algo,X,y,score,final_Result):
     model_score=cross_validate(model,X,y,cv=10,scoring=score)
     y_pred_cross = cross_val_predict(model,X,y,cv=10)
     conf_mat = confusion_matrix(y, y_pred_cross)
@@ -170,7 +172,7 @@ def model_evalution(model,name_of_algo[i],X,y,score,final_Result):
     
 
 
-# In[64]:
+# In[3]:
 
 
 # loading of PIMA dataset 
@@ -192,39 +194,39 @@ attributes = data.drop("Outcome",axis=1).columns
 
 # ## EDA
 
-# In[65]:
+# In[4]:
 
 
 data.head()
 
 
-# In[66]:
+# In[5]:
 
 
 data.info();
 
 
-# In[67]:
+# In[6]:
 
 
 
 data.describe()
 
 
-# In[68]:
+# In[7]:
 
 
 ax=data["Outcome"].value_counts().plot(kind="bar",color=["blue","red"])
 ax.set_xticklabels(['Diabetes','No Diabetes'],rotation=0);
 
 
-# In[69]:
+# In[8]:
 
 
 violin_plot()
 
 
-# In[70]:
+# In[9]:
 
 
 # Pairwise plot of all attributes 
@@ -234,7 +236,7 @@ sns.pairplot(data,hue='Outcome',palette='gnuplot');
 
 # ## Data processing 
 
-# In[71]:
+# In[10]:
 
 
 # replacing missing value with nan value
@@ -244,7 +246,7 @@ data[nan_replacement_att]=data[nan_replacement_att].replace(0,np.nan)
 median_target_all()  # median_target_all replaces nan value with median of that attribute grouped by outcome 
 
 
-# In[72]:
+# In[11]:
 
 
 outliers_removal() # replacing outliers with Nan 
@@ -252,13 +254,13 @@ outliers_removal() # replacing outliers with Nan
 median_target_all()
 
 
-# In[73]:
+# In[12]:
 
 
 print(data.isna().sum())
 
 
-# In[74]:
+# In[13]:
 
 
 fig = plt.figure(figsize=(14,15))
@@ -274,21 +276,21 @@ for attribute in attributes:
 plt.show()
 
 
-# In[75]:
+# In[14]:
 
 
 
-sns.set(style="ticks", color_codes=True)
-sns.pairplot(data,hue='Outcome',palette='gnuplot');
+#sns.set(style="ticks", color_codes=True)
+#sns.pairplot(data,hue='Outcome',palette='gnuplot');
 
 
-# In[76]:
+# In[15]:
 
 
 violin_plot()
 
 
-# In[77]:
+# In[16]:
 
 
 # standardization of dataset
@@ -296,7 +298,7 @@ data_std=z_score(data)
 data_std.describe()
 
 
-# In[78]:
+# In[17]:
 
 
 # It shows the correlation(positive,neagative) between different columns(only integer value columns) 
@@ -307,7 +309,7 @@ ax = sns.heatmap(corr_matrix,annot=True,linewidth=0.5,fmt=".2f",cmap="YlOrBr")
 
 # ###### Distribution of data set 
 
-# In[79]:
+# In[18]:
 
 
 y = data["Outcome"]
@@ -342,7 +344,7 @@ X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
 # ```
 # 
 
-# In[80]:
+# In[19]:
 
 
 from collections import defaultdict
@@ -379,18 +381,23 @@ for i,algorithm in enumerate(list_of_algo):
             print("null")
     print()
     plot_roc(fpr,tpr,auc_model,name_of_algo[i])
+    plot_confusion_matrix(df_cm,name_of_algo[i])
+    """
     sns.heatmap(df_cm, annot=True,fmt="d")
     plt.title(name_of_algo[i])
-    plt.show()    
+    plt.xlabel("Predicted label")
+    plt.ylabel("True label")
+    plt.show()
+    """
 
 
-# In[81]:
+# In[20]:
 
 
 pd.DataFrame.from_dict(final_Result)
 
 
-# In[82]:
+# In[22]:
 
 
 
@@ -412,55 +419,133 @@ auc_nn = auc(fpr, tpr)
 plot_roc(fpr,tpr,auc_nn,"Neural network")
 
 
-# ### Grid search for Random forest classifier
-# ```python    
-# from sklearn.model_selection import GridSearchCV
-# print(RandomForestClassifier())
-# n_estimators = [100, 200, 250, 300, 350]
-# max_depth = [1, 3, 4, 5, 8, 10]
-# min_samples_split = [10, 15, 20, 25, 30, 100]
-# min_samples_leaf = [1, 2, 4, 5, 7] 
-# max_features = ['auto', 'sqrt']
-# criterion=['gini']
-# bootstrap = [True, False]
-# rfr=RandomForestClassifier()
-# hyperF = dict(n_estimators = n_estimators, max_depth = max_depth,criterion=criterion,
-#               max_features = max_features,  min_samples_split = min_samples_split, 
-#               min_samples_leaf = min_samples_leaf,bootstrap = bootstrap)
-# 
-# gridF = GridSearchCV(rfr, hyperF,scoring='accuracy', cv = 3, verbose = 1, 
-#                       n_jobs = -1)
-# bestF = gridF.fit(X_train, y_train)
-# ```
-# 
-# ### Grid search for XGB Classifer 
-# ```python
-# from sklearn.model_selection import GridSearchCV
-# model = XGBClassifier()
-# param_grid = {
-#     'n_estimators': [100,200,300,],
-#     'colsample_bytree': [0.5,0.6,0.7],
-#     'max_depth': [3,5,8],
-#     'reg_alpha': [1.1, 1.2, 1.3],
-#     'reg_lambda': [1.1, 1.2, 1.3],
-#     'subsample': [0.8, 0.9,1,1.1],
-#     'gamma':[1.4,1.5,1.6,]
-# }
-# gs = GridSearchCV(
-#         estimator=model,
-#         param_grid=param_grid, 
-#         cv=10, 
-#         n_jobs=-1, 
-#         scoring="roc_auc",
-#         verbose=2
-#     )
-# gsf=gs.fit(X_train,y_train)
-# print(gsf.best_params_)
-# ```
+# In[24]:
+
+
+param_adaboost = {
+ 'n_estimators': [50*x for x in range(1,10)],
+ 'learning_rate' : [0.01*x for x in range(1,100,5)],
+ 'loss' : ['linear', 'square', 'exponential']
+ }
+param_xgb = {
+    'n_estimators': [50*x for x in range(1,10)],
+    'colsample_bytree': [0.1*x for x in range(1,10)],
+    'max_depth': [x for x in range(1,10)],
+    'reg_alpha': [0.1*x for x in range(1,20)],
+    'reg_lambda': [0.1*x for x in range(1,20)],
+    'subsample': [0.1*x for x in range(1,20)],
+    'gamma':[0.1*x for x in range(1,20)]
+}
+param_rf={
+    'n_estimators' : [50*x for x in range(1,10)],
+    'max_depth' : [x for x in range(1,15)],
+    'min_samples_split' : [5*x for x in range(1,20)],
+    'min_samples_leaf' : [x for x in range(1,10)],
+    'max_features' : ['auto', 'sqrt'],
+    'criterion' : ['gini'],
+    'bootstrap' : [True, False]
+}
+param_knn ={
+    'leaf_size' : [3*x for x in range(1,20)],
+    'n_neighbors' : [x for x in range(1,20,2)],
+    'weights' : ['uniform', 'distance']
+}
+param_SVM = {'C': [0.1, 1, 10, 100, 1000],  
+              'gamma': [1, 0.1, 0.01, 0.001, 0.0001], 
+              'kernel': ['rbf', 'poly', 'sigmoid']}
+para_list=[param_xgb,param_rf,param_adaboost,param_knn,param_SVM]
+gridSearch_alg=[XGBClassifier(),RandomForestClassifier(),AdaBoostClassifier(),
+                KNeighborsClassifier(),SVC(probability=True)]
+gridSearch_alg_name=["XGBClassifier","RandomForestClassifier","AdaBoostClassifier",
+                "KNeighborsClassifier","SVC"]
+scores = ["accuracy","f1","roc_auc"]
+all_param={}
+for i in range(len(para_list)):
+    for score in scores:
+        all_param[gridSearch_alg_name[i]]={}
+print(all_param)
+
+
+# In[ ]:
+
+
+
+from sklearn.model_selection import GridSearchCV
+for i in range(len(para_list)):
+    print("#"*120)
+    print("#"*120)
+    print(gridSearch_alg[i])
+    for score in scores:
+        print("*"*120)
+        print(score)
+        gridsearch = GridSearchCV(gridSearch_alg[i], para_list[i],scoring=score, cv = 10, verbose = 2, 
+                      n_jobs = -1)
+        bestfit=gridsearch.fit(X_train,y_train)
+        best_para[gridSearch_alg_name[i]][score]=bestfit.best_params_
+        print(bestfit.best_params_)
+        print()
+
+
+# In[ ]:
+
+
+### Grid search for Random forest classifier
+#```python    
+from sklearn.model_selection import GridSearchCV
+print(RandomForestClassifier())
+n_estimators = [50*x for x in range(1,10)]
+max_depth = [x for x in range(1,15)]
+min_samples_split = [5*x for x in range(1,20)]
+min_samples_leaf = [x for x in range(1,10)] 
+max_features = ['auto', 'sqrt']
+criterion=['gini']
+bootstrap = [True, False]
+rfr=RandomForestClassifier()
+hyperF = dict(n_estimators = n_estimators, max_depth = max_depth,criterion=criterion,
+              max_features = max_features,  min_samples_split = min_samples_split, 
+              min_samples_leaf = min_samples_leaf,bootstrap = bootstrap)
+
+gridF = GridSearchCV(rfr, hyperF,scoring='accuracy', cv = 10, verbose = 1, 
+                      n_jobs = -1)
+bestF = gridF.fit(X_train, y_train)
+#```
+
+### Grid search for XGB Classifer 
+#```python
+from sklearn.model_selection import GridSearchCV
+model = XGBClassifier()
+param_grid = {
+    'n_estimators': [50*x for x in range(1,10)],
+    'colsample_bytree': [0.1*x for x in range(1,10)],
+    'max_depth': [x for x in range(1,10)],
+    'reg_alpha': [0.1*x for x in range(1,20)],
+    'reg_lambda': [0.1*x for x in range(1,20)],
+    'subsample': [0.1*x for x in range(1,20)],
+    'gamma':[0.1*x for x in range(1,20)]
+}
+gs = GridSearchCV(
+        estimator=model,
+        param_grid=param_grid, 
+        cv=10, 
+        n_jobs=-1, 
+        scoring="roc_auc",
+        verbose=2
+    )
+gsf=gs.fit(X_train,y_train)
+
+#```
+
+
+# In[ ]:
+
+
+print(bestF.best_params_)
+print(gsf.best_params_)
+
 
 # ## Finalizing optimal model for web application 
 
-# In[83]:
+# In[51]:
 
 
 y = data["Outcome"]
@@ -473,19 +558,20 @@ model_opt = XGBClassifier(colsample_bytree = 0.5,max_depth = 8,n_estimators=100,
 model_opt.fit(X_train,y_train)
 
 xgboost_opt_result= defaultdict(list)
-xgboost_opt_result,df_cm = model_evalution(model_opt,"XGBoost",X,y,xgboost_opt_result)
+xgboost_opt_result,df_cm = model_evalution(model_opt,"XGBoost",X,y,score,xgboost_opt_result)
+
+
+# In[52]:
 
 
 
-# In[85]:
-
-
+plot_confusion_matrix(df_cm,"XGboost")
 pd.DataFrame.from_dict(xgboost_opt_result)
 
 
 # ## Storing trained model in a file 
 
-# In[84]:
+# In[ ]:
 
 
 import pickle
