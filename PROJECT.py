@@ -3,7 +3,7 @@
 
 # # Prediction of Diabetes based on given attribute using PIMA Diabetes dataset
 
-# In[1]:
+# In[2]:
 
 
 import numpy as np   
@@ -23,6 +23,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 #Evaluation
 from sklearn.model_selection import train_test_split,cross_val_score,cross_validate,cross_val_predict
+from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.metrics import roc_curve,auc
@@ -33,7 +34,7 @@ filterwarnings("ignore")
 
 # ## Function definations 
 
-# In[2]:
+# In[65]:
 
 
 def violin_plot(nrow=4,ncol=2): 
@@ -126,11 +127,12 @@ def outliers_removal():
 ##############################################################################################################
         
 def z_score(df):
-    """Function for apply z score standardization
+    """
+    Function for apply z score standardization
     
-       Input: dataframe to be standardized
+    Input: dataframe to be standardized
        
-       output :standardized dataframe 
+    output :standardized dataframe 
     """
     df_std = df.copy()
     for column in df_std.columns:
@@ -140,6 +142,15 @@ def z_score(df):
 ##############################################################################################################
 
 def plot_confusion_matrix(df_cm,name_of_algo):
+    """
+    Function for plot confusion matrix as heatmap with tittle name of algorith 
+    
+    Input : confusion matrix converted into dataframe, Name of algorithm  
+    
+    output : Plot heatmap of confusion matrix 
+    
+    return : None 
+    """
     sns.heatmap(df_cm, annot=True,fmt="d")
     plt.title(name_of_algo)
     plt.xlabel("Predicted label")
@@ -149,6 +160,14 @@ def plot_confusion_matrix(df_cm,name_of_algo):
 ##############################################################################################################
 
 def model_evalution(model,name_of_algo,X,y,score,final_Result):
+    """
+    Function calculate different performance using cross validate method 
+    
+    Input  : model = object of algorithm , string type name of algorithm , X,y 
+             score = dictionary containing performance metrics , final_Result = empty Dict for storing result 
+    return : final_result dictionary containg all performance result,
+             df_cm a dataframe containing confusion matrix
+    """
     model_score=cross_validate(model,X,y,cv=10,scoring=score)
     y_pred_cross = cross_val_predict(model,X,y,cv=10)
     conf_mat = confusion_matrix(y, y_pred_cross)
@@ -169,10 +188,18 @@ def model_evalution(model,name_of_algo,X,y,score,final_Result):
     final_Result["Model"].append(name_of_algo)
     return final_Result,df_cm
 
+##############################################################################################################
+
+def grid_search(model,parameter,score,name_model,X_train,y_train,cv=10):
+        gridsearch = GridSearchCV(model, parameter,scoring=score, cv = cv, verbose = 2, 
+                      n_jobs = -1)
+        print(name_model)
+        bestfit=gridsearch.fit(X_train,y_train)
+        print(bestfit.best_params_)
     
 
 
-# In[3]:
+# In[4]:
 
 
 # loading of PIMA dataset 
@@ -194,39 +221,39 @@ attributes = data.drop("Outcome",axis=1).columns
 
 # ## EDA
 
-# In[4]:
+# In[5]:
 
 
 data.head()
 
 
-# In[5]:
+# In[6]:
 
 
 data.info();
 
 
-# In[6]:
+# In[7]:
 
 
 
 data.describe()
 
 
-# In[7]:
+# In[8]:
 
 
 ax=data["Outcome"].value_counts().plot(kind="bar",color=["blue","red"])
 ax.set_xticklabels(['Diabetes','No Diabetes'],rotation=0);
 
 
-# In[8]:
+# In[9]:
 
 
 violin_plot()
 
 
-# In[9]:
+# In[10]:
 
 
 # Pairwise plot of all attributes 
@@ -236,17 +263,17 @@ sns.pairplot(data,hue='Outcome',palette='gnuplot');
 
 # ## Data processing 
 
-# In[10]:
+# In[11]:
 
 
 # replacing missing value with nan value
-nan_replacement_att=["Glucose",  "BloodPressure","SkinThickness","Insulin","BMI"]
+ nan_replacement_att=["Glucose",  "BloodPressure","SkinThickness","Insulin","BMI"]
 data[nan_replacement_att]=data[nan_replacement_att].replace(0,np.nan)
 
 median_target_all()  # median_target_all replaces nan value with median of that attribute grouped by outcome 
 
 
-# In[11]:
+# In[12]:
 
 
 outliers_removal() # replacing outliers with Nan 
@@ -254,13 +281,13 @@ outliers_removal() # replacing outliers with Nan
 median_target_all()
 
 
-# In[12]:
+# In[13]:
 
 
 print(data.isna().sum())
 
 
-# In[13]:
+# In[14]:
 
 
 fig = plt.figure(figsize=(14,15))
@@ -276,7 +303,7 @@ for attribute in attributes:
 plt.show()
 
 
-# In[14]:
+# In[15]:
 
 
 
@@ -284,13 +311,13 @@ plt.show()
 #sns.pairplot(data,hue='Outcome',palette='gnuplot');
 
 
-# In[15]:
+# In[16]:
 
 
 violin_plot()
 
 
-# In[16]:
+# In[17]:
 
 
 # standardization of dataset
@@ -298,7 +325,7 @@ data_std=z_score(data)
 data_std.describe()
 
 
-# In[17]:
+# In[18]:
 
 
 # It shows the correlation(positive,neagative) between different columns(only integer value columns) 
@@ -309,7 +336,7 @@ ax = sns.heatmap(corr_matrix,annot=True,linewidth=0.5,fmt=".2f",cmap="YlOrBr")
 
 # ###### Distribution of data set 
 
-# In[18]:
+# In[19]:
 
 
 y = data["Outcome"]
@@ -344,7 +371,7 @@ X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
 # ```
 # 
 
-# In[19]:
+# In[20]:
 
 
 from collections import defaultdict
@@ -391,7 +418,7 @@ for i,algorithm in enumerate(list_of_algo):
     """
 
 
-# In[20]:
+# In[21]:
 
 
 pd.DataFrame.from_dict(final_Result)
@@ -419,28 +446,27 @@ auc_nn = auc(fpr, tpr)
 plot_roc(fpr,tpr,auc_nn,"Neural network")
 
 
-# In[24]:
+# In[72]:
 
 
 param_adaboost = {
  'n_estimators': [50*x for x in range(1,10)],
- 'learning_rate' : [0.01*x for x in range(1,100,5)],
- 'loss' : ['linear', 'square', 'exponential']
- }
-param_xgb = {
-    'n_estimators': [50*x for x in range(1,10)],
+ 'learning_rate' : [0.0001, 0.001, 0.01, 0.1, 1.0],
+  }
+param_grid = {
+    'n_estimators': list(range(50,250,50)),
     'colsample_bytree': [0.1*x for x in range(1,10)],
-    'max_depth': [x for x in range(1,10)],
-    'reg_alpha': [0.1*x for x in range(1,20)],
-    'reg_lambda': [0.1*x for x in range(1,20)],
-    'subsample': [0.1*x for x in range(1,20)],
-    'gamma':[0.1*x for x in range(1,20)]
+    'max_depth': [x for x in range(5,11)],
+    'reg_alpha': [0.1*x for x in range(7,13)],
+    'reg_lambda': [0.1*x for x in range(7,13)],
+    'subsample': [0.1*x for x in range(7,13)],
+    'gamma':[0.1*x for x in range(7,13)]
 }
 param_rf={
     'n_estimators' : [50*x for x in range(1,10)],
-    'max_depth' : [x for x in range(1,15)],
-    'min_samples_split' : [5*x for x in range(1,20)],
-    'min_samples_leaf' : [x for x in range(1,10)],
+    'max_depth' : [x for x in range(1,15,2)],
+    'min_samples_split' : [5*x for x in range(1,20,2)],
+    'min_samples_leaf' : [x for x in range(1,10,2)],
     'max_features' : ['auto', 'sqrt'],
     'criterion' : ['gini'],
     'bootstrap' : [True, False]
@@ -459,114 +485,103 @@ gridSearch_alg=[XGBClassifier(),RandomForestClassifier(),AdaBoostClassifier(),
 gridSearch_alg_name=["XGBClassifier","RandomForestClassifier","AdaBoostClassifier",
                 "KNeighborsClassifier","SVC"]
 scores = ["accuracy","f1","roc_auc"]
-all_param={}
-for i in range(len(para_list)):
-    for score in scores:
-        all_param[gridSearch_alg_name[i]]={}
-print(all_param)
+score="roc_auc"
 
 
-# In[ ]:
+# ## XGBClassifier
+# 
+# grid_search(gridSearch_alg[0], para_list[0],score,gridSearch_alg_name[0],X,y,3)
+# 
+# Fitting 3 folds for each of 279936 candidates, totalling 839808 fits
+# 
+# {'colsample_bytree': 0.30000000000000004, 'gamma': 0.9, 'max_depth': 7, 'n_estimators': 100, 
+#  'reg_alpha': 1.2000000000000002, 'reg_lambda': 0.8, 'subsample': 0.8}
+#         
 
+# # Grid search code
 
+# ## RandomForestClassifier
+# 
+# grid_search(gridSearch_alg[1], para_list[1],score,gridSearch_alg_name[1],X,y,3)
+# 
+# Fitting 3 folds for each of 12600 candidates, totalling 37800 fits
+# 
+# {'bootstrap': True, 'criterion': 'gini', 'max_depth': 11, 'max_features': 'auto', 'min_samples_leaf': 3, 'min_samples_split': 5, 'n_estimators': 100}
+# 
 
-from sklearn.model_selection import GridSearchCV
-for i in range(len(para_list)):
-    print("#"*120)
-    print("#"*120)
-    print(gridSearch_alg[i])
-    for score in scores:
-        print("*"*120)
-        print(score)
-        gridsearch = GridSearchCV(gridSearch_alg[i], para_list[i],scoring=score, cv = 10, verbose = 2, 
-                      n_jobs = -1)
-        bestfit=gridsearch.fit(X_train,y_train)
-        best_para[gridSearch_alg_name[i]][score]=bestfit.best_params_
-        print(bestfit.best_params_)
-        print()
+# ## AdaBoostClassifier
+# 
+# grid_search(gridSearch_alg[2], para_list[2],score,gridSearch_alg_name[2],X,y)
+# 
+# Fitting 10 folds for each of 45 candidates, totalling 450 fits
+# 
+# {'learning_rate': 0.1, 'n_estimators': 450}
 
+# ## KNeighborsClassifier
+# 
+# grid_search(gridSearch_alg[3], para_list[3],score,gridSearch_alg_name[3],X_train,y_train)
+# 
+# Fitting 10 folds for each of 380 candidates, totalling 3800 fits
+# 
+# {'leaf_size': 3, 'n_neighbors': 17, 'weights': 'distance'}
 
-# In[ ]:
-
-
-### Grid search for Random forest classifier
-#```python    
-from sklearn.model_selection import GridSearchCV
-print(RandomForestClassifier())
-n_estimators = [50*x for x in range(1,10)]
-max_depth = [x for x in range(1,15)]
-min_samples_split = [5*x for x in range(1,20)]
-min_samples_leaf = [x for x in range(1,10)] 
-max_features = ['auto', 'sqrt']
-criterion=['gini']
-bootstrap = [True, False]
-rfr=RandomForestClassifier()
-hyperF = dict(n_estimators = n_estimators, max_depth = max_depth,criterion=criterion,
-              max_features = max_features,  min_samples_split = min_samples_split, 
-              min_samples_leaf = min_samples_leaf,bootstrap = bootstrap)
-
-gridF = GridSearchCV(rfr, hyperF,scoring='accuracy', cv = 10, verbose = 1, 
-                      n_jobs = -1)
-bestF = gridF.fit(X_train, y_train)
-#```
-
-### Grid search for XGB Classifer 
-#```python
-from sklearn.model_selection import GridSearchCV
-model = XGBClassifier()
-param_grid = {
-    'n_estimators': [50*x for x in range(1,10)],
-    'colsample_bytree': [0.1*x for x in range(1,10)],
-    'max_depth': [x for x in range(1,10)],
-    'reg_alpha': [0.1*x for x in range(1,20)],
-    'reg_lambda': [0.1*x for x in range(1,20)],
-    'subsample': [0.1*x for x in range(1,20)],
-    'gamma':[0.1*x for x in range(1,20)]
-}
-gs = GridSearchCV(
-        estimator=model,
-        param_grid=param_grid, 
-        cv=10, 
-        n_jobs=-1, 
-        scoring="roc_auc",
-        verbose=2
-    )
-gsf=gs.fit(X_train,y_train)
-
-#```
-
-
-# In[ ]:
-
-
-print(bestF.best_params_)
-print(gsf.best_params_)
-
+# ## SVM 
+# 
+# grid_search(gridSearch_alg[4], para_list[4],score,gridSearch_alg_name[4],X_train,y_train)
+# 
+# Fitting 10 folds for each of 75 candidates, totalling 750 fits
+# 
+# {'C': 0.1, 'gamma': 1, 'kernel': 'rbf'}
 
 # ## Finalizing optimal model for web application 
 
-# In[51]:
+# In[78]:
 
 
 y = data["Outcome"]
 X=data_std.drop(["Outcome"],axis=1)
 X_train,X_test,y_train,y_test =  train_test_split(X,y,test_size=0.2)
+score = {"accuracy": "accuracy",
+         "prec": "precision","recall" : "recall",
+         "f1" : "f1","roc_auc" : "roc_auc"}
 
+opt_alg_name=["XGBClassifier","RandomForestClassifier","AdaBoostClassifier",
+                "KNeighborsClassifier"]
 
-model_opt = XGBClassifier(colsample_bytree = 0.5,max_depth = 8,n_estimators=100,
-                          reg_alpha=1.1,reg_lambda=1.1, subsample=1,gamma=1.5)
-model_opt.fit(X_train,y_train)
+opt_algo =   [XGBClassifier(colsample_bytree = 0.3,max_depth = 7,n_estimators=100,
+                        reg_alpha=1.2,reg_lambda=0.8, subsample=0.8,gamma=0.9),
+            RandomForestClassifier(bootstrap = True, criterion = 'gini',max_depth = 11,
+                        max_features= 'auto', min_samples_leaf = 3, min_samples_split = 5,
+                        n_estimators = 100),
+            AdaBoostClassifier(learning_rate = 0.1, n_estimators = 450),
+            KNeighborsClassifier(leaf_size = 3, n_neighbors = 17, weights = 'distance')]
+opt_final_Result= defaultdict(list)
+for i,algorithm in enumerate(opt_algo):
+    model=algorithm
+    model.fit(X_train,y_train)
+    y_pred=model.predict(X_test)
+    
+    ## Evalution of model 
+    opt_final_Result,df_cm = model_evalution(model,opt_alg_name[i],X,y,score,opt_final_Result)
+    
+    # Roc  
+    y_pred_prob = model.predict_proba(X_test)[:, 1]
+    fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob)
+    auc_model = auc(fpr, tpr)
+    
+    plot_roc(fpr,tpr,auc_model,opt_alg_name[i])
+    plot_confusion_matrix(df_cm,opt_alg_name[i])
+"""model_opt.fit(X_train,y_train)
 
 xgboost_opt_result= defaultdict(list)
 xgboost_opt_result,df_cm = model_evalution(model_opt,"XGBoost",X,y,score,xgboost_opt_result)
+"""
 
 
-# In[52]:
+# In[79]:
 
 
-
-plot_confusion_matrix(df_cm,"XGboost")
-pd.DataFrame.from_dict(xgboost_opt_result)
+pd.DataFrame.from_dict(opt_final_Result)
 
 
 # ## Storing trained model in a file 
