@@ -16,7 +16,7 @@
 ## About the Project
     This is built to predict probality of having diabetes using predefined paramter with the help of Machine Learning.
     Project work has been published in International Research Journal of Engineering and Technology (IRJET) Volume 8, Issue 8,  August 2021 
-    Refer to https://www.irjet.net/volume8-issue8 S.No: 82 for detailed explanations.
+    Refer to **https://www.irjet.net/volume8-issue8 S.No: 82** for detailed explanations.
     Objective of the project are :
         * To build an efficient model that can predict the probability of having Diabetes.
         * To visualize various independent variables like the number of pregnancies the patient has had, their BMI, insulin level, age, and dependent variable
