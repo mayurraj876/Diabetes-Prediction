@@ -19,8 +19,8 @@
         * To visualize various independent variables like the number of pregnancies the patient has had, their BMI, insulin level, age, and dependent variable
         * To increase the model efficiency of the model with help of data processing and hyperparameter tuning.
         * To build a cloud-based user-friendly interface.
-    
-
+    Project work has been published in International Research Journal of Engineering and Technology (IRJET) Volume 8, Issue 8,  August 2021 https://www.irjet.net/volume8-issue8 S.No: 82. Please refer to manuscript for more details.
+  
 
 <!-- GETTING STARTED -->
 ## Getting Started
