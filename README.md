@@ -5,6 +5,7 @@
 ## Table of Contents
 
 * [About the Project](#about-the-project)
+* [Publication link](#publication-link)
 * [Getting Started](#getting-started)
   * [Prerequisites](#prerequisites)
   * [Installation](#installation)
@@ -22,7 +23,11 @@
         * To visualize various independent variables like the number of pregnancies the patient has had, their BMI, insulin level, age, and dependent variable
         * To increase the model efficiency of the model with help of data processing and hyperparameter tuning.
         * To build a cloud-based user-friendly interface.
-   
+ 
+ <!-- Publication link -->
+ ## Publication link
+    Project work has been published in International Research Journal of Engineering and Technology (IRJET) Volume 8, Issue 8,  August 2021 
+    Refer to https://www.irjet.net/volume8-issue8 S.No: 82 for detailed explanations.
   
 
 <!-- GETTING STARTED -->
